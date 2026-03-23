@@ -4,6 +4,38 @@ import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 
 const BASE_CLIENTES = 500
 
+function AnimatedClientsCount({ value }) {
+  const [displayValue, setDisplayValue] = useState(value)
+  const [previousValue, setPreviousValue] = useState(value)
+  const [animating, setAnimating] = useState(false)
+
+  useEffect(() => {
+    if (value === displayValue) {
+      return
+    }
+
+    setPreviousValue(displayValue)
+    setDisplayValue(value)
+    setAnimating(true)
+
+    const timeoutId = setTimeout(() => setAnimating(false), 480)
+    return () => clearTimeout(timeoutId)
+  }, [value, displayValue])
+
+  return (
+    <span className="relative inline-block min-h-[1.2em] min-w-[4ch] align-middle">
+      {animating ? (
+        <span className="pointer-events-none absolute inset-0 animate-[fadeSlideOut_480ms_ease_forwards]">
+          {previousValue}
+        </span>
+      ) : null}
+      <span className={animating ? 'inline-block animate-[fadeSlideIn_480ms_ease]' : 'inline-block'}>
+        {displayValue}
+      </span>
+    </span>
+  )
+}
+
 export function TvDashboardPage() {
   const [config, setConfig] = useState(DEFAULT_DASHBOARD_CONFIG)
   const [loadError, setLoadError] = useState('')
@@ -32,11 +64,23 @@ export function TvDashboardPage() {
 
     refreshConfig()
 
+    const realtimeChannel = supabase
+      .channel('dashboard-config-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'configuracoes_dashboard' },
+        () => {
+          refreshConfig()
+        },
+      )
+      .subscribe()
+
     const intervalId = setInterval(refreshConfig, 5000)
 
     return () => {
       isActive = false
       clearInterval(intervalId)
+      supabase.removeChannel(realtimeChannel)
     }
   }, [])
 
@@ -54,6 +98,15 @@ export function TvDashboardPage() {
         config.meta_anual > 0 ? Math.min(100, Math.round((anual / config.meta_anual) * 100)) : 0,
     }
   }, [config])
+
+  const mesAtual = useMemo(
+    () =>
+      new Date().toLocaleDateString('pt-BR', {
+        month: 'long',
+      }),
+    [],
+  )
+  const anoAtual = new Date().getFullYear()
 
   return (
     <main
@@ -80,14 +133,14 @@ export function TvDashboardPage() {
 
       <section className="flex flex-1 items-center justify-center px-4">
         <h1 className="text-center text-[72px] font-extrabold leading-none tracking-tight drop-shadow-[0_0_35px_rgba(255,255,255,0.18)] sm:text-[98px] md:text-[132px] lg:text-[170px]">
-          {config.contagem_atual} clientes
+          <AnimatedClientsCount value={config.contagem_atual} /> Clientes
         </h1>
       </section>
 
       <div className="grid gap-6 px-6 pb-8 md:grid-cols-2 md:gap-8 md:px-14 md:pb-10">
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-base font-semibold md:text-xl">Meta Mensal</p>
+            <p className="text-base font-semibold capitalize md:text-xl">Meta Mensal - {mesAtual}</p>
             <p className="text-sm font-medium opacity-90 md:text-lg">
               {mensalAtual} / {config.meta_mensal}
             </p>
@@ -107,7 +160,7 @@ export function TvDashboardPage() {
 
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-base font-semibold md:text-xl">Meta Anual</p>
+            <p className="text-base font-semibold md:text-xl">Meta Anual - {anoAtual}</p>
             <p className="text-sm font-medium opacity-90 md:text-lg">
               {anualAtual} / {config.meta_anual}
             </p>
