@@ -1,10 +1,15 @@
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabaseClient'
+import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 
 export function AdminPanelPage() {
   const navigate = useNavigate()
 
   async function handleLogout() {
+    if (!supabase) {
+      navigate('/admin/login')
+      return
+    }
+
     await supabase.auth.signOut()
     navigate('/admin/login')
   }
@@ -26,6 +31,12 @@ export function AdminPanelPage() {
           Estrutura inicial criada. Na proxima etapa vamos conectar os campos ao Supabase e
           implementar os updates em tempo real.
         </p>
+
+        {supabaseEnvError ? (
+          <p className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {supabaseEnvError}
+          </p>
+        ) : null}
       </div>
     </main>
   )

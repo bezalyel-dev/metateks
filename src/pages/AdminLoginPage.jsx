@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabaseClient'
+import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 
 export function AdminLoginPage() {
   const navigate = useNavigate()
@@ -11,6 +11,12 @@ export function AdminLoginPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+
+    if (!supabase) {
+      setError(supabaseEnvError)
+      return
+    }
+
     setLoading(true)
     setError('')
 
