@@ -57,7 +57,17 @@ export function TvDashboardPage() {
       try {
         const row = await fetchDashboardConfig(supabase)
         if (row && isActive) {
-          setConfig(row)
+          setConfig((current) => {
+            const currentTimestamp = current?.updated_at ? Date.parse(current.updated_at) : 0
+            const nextTimestamp = row?.updated_at ? Date.parse(row.updated_at) : 0
+
+            // Evita regressao visual quando uma leitura antiga chega depois.
+            if (nextTimestamp < currentTimestamp) {
+              return current
+            }
+
+            return row
+          })
           setLoadError('')
         }
       } catch (error) {

@@ -22,6 +22,7 @@ function normalizeConfig(row) {
     cor_texto: row.cor_texto ?? DEFAULT_DASHBOARD_CONFIG.cor_texto,
     familia_fonte: row.familia_fonte ?? DEFAULT_DASHBOARD_CONFIG.familia_fonte,
     url_logo: row.url_logo ?? DEFAULT_DASHBOARD_CONFIG.url_logo,
+    updated_at: row.updated_at ?? null,
   }
 }
 
@@ -29,6 +30,7 @@ export async function fetchDashboardConfig(client) {
   const { data, error } = await client
     .from('configuracoes_dashboard')
     .select('*')
+    .order('updated_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
