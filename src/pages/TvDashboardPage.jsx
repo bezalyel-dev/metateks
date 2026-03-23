@@ -4,6 +4,11 @@ import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 
 const BASE_CLIENTES = 500
 
+function toSafeInt(value, fallback = 0) {
+  const parsed = Number.parseInt(value, 10)
+  return Number.isNaN(parsed) ? fallback : parsed
+}
+
 function AnimatedClientsCount({ value }) {
   const [displayValue, setDisplayValue] = useState(value)
   const [previousValue, setPreviousValue] = useState(value)
@@ -84,20 +89,26 @@ export function TvDashboardPage() {
     }
   }, [])
 
-  const { mensalAtual, anualAtual, progressoMensal, progressoAnual } = useMemo(() => {
-    const ganhosDesdeBase = Math.max(0, Number(config.contagem_atual) - BASE_CLIENTES)
-    const mensal = Math.min(ganhosDesdeBase, Math.max(0, Number(config.meta_mensal)))
-    const anual = Math.min(ganhosDesdeBase, Math.max(0, Number(config.meta_anual)))
+  const { totalClientes, metaMensal, metaAnual, mensalAtual, anualAtual, progressoMensal, progressoAnual } =
+    useMemo(() => {
+      const total = Math.max(0, toSafeInt(config.contagem_atual, BASE_CLIENTES))
+      const mensalMeta = Math.max(0, toSafeInt(config.meta_mensal, 0))
+      const anualMeta = Math.max(0, toSafeInt(config.meta_anual, 0))
+      const ganhosDesdeBase = Math.max(0, total - BASE_CLIENTES)
 
-    return {
-      mensalAtual: mensal,
-      anualAtual: anual,
-      progressoMensal:
-        config.meta_mensal > 0 ? Math.min(100, Math.round((mensal / config.meta_mensal) * 100)) : 0,
-      progressoAnual:
-        config.meta_anual > 0 ? Math.min(100, Math.round((anual / config.meta_anual) * 100)) : 0,
-    }
-  }, [config])
+      const mensal = ganhosDesdeBase
+      const anual = ganhosDesdeBase
+
+      return {
+        totalClientes: total,
+        metaMensal: mensalMeta,
+        metaAnual: anualMeta,
+        mensalAtual: mensal,
+        anualAtual: anual,
+        progressoMensal: mensalMeta > 0 ? Math.min(100, Math.round((mensal / mensalMeta) * 100)) : 0,
+        progressoAnual: anualMeta > 0 ? Math.min(100, Math.round((anual / anualMeta) * 100)) : 0,
+      }
+    }, [config])
 
   const mesAtual = useMemo(
     () =>
@@ -133,7 +144,7 @@ export function TvDashboardPage() {
 
       <section className="flex flex-1 items-center justify-center px-4">
         <h1 className="text-center text-[72px] font-extrabold leading-none tracking-tight drop-shadow-[0_0_35px_rgba(255,255,255,0.18)] sm:text-[98px] md:text-[132px] lg:text-[170px]">
-          <AnimatedClientsCount value={config.contagem_atual} /> Clientes
+          <AnimatedClientsCount value={totalClientes} /> Clientes
         </h1>
       </section>
 
@@ -142,7 +153,7 @@ export function TvDashboardPage() {
           <div className="mb-3 flex items-center justify-between">
             <p className="text-base font-semibold capitalize md:text-xl">Meta Mensal - {mesAtual}</p>
             <p className="text-sm font-medium opacity-90 md:text-lg">
-              {mensalAtual} / {config.meta_mensal}
+              {mensalAtual} / {metaMensal}
             </p>
           </div>
 
@@ -162,7 +173,7 @@ export function TvDashboardPage() {
           <div className="mb-3 flex items-center justify-between">
             <p className="text-base font-semibold md:text-xl">Meta Anual - {anoAtual}</p>
             <p className="text-sm font-medium opacity-90 md:text-lg">
-              {anualAtual} / {config.meta_anual}
+              {anualAtual} / {metaAnual}
             </p>
           </div>
 
