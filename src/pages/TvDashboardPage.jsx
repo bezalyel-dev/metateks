@@ -146,8 +146,8 @@ export function TvDashboardPage() {
       <div className="grid gap-6 px-6 pb-8 md:grid-cols-2 md:gap-8 md:px-14 md:pb-10">
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-base font-semibold capitalize md:text-xl">Meta Mensal - {mesAtual}</p>
-            <p className="min-w-[92px] text-right text-sm font-semibold tabular-nums opacity-90 md:min-w-[108px] md:text-lg">
+            <p className="pr-3 text-base font-semibold capitalize md:text-xl">Meta Mensal - {mesAtual}</p>
+            <p className="shrink-0 min-w-[92px] text-right text-sm font-semibold tabular-nums opacity-90 md:min-w-[108px] md:text-lg">
               {novosClientes} / {metaMensal}
             </p>
           </div>
@@ -166,8 +166,8 @@ export function TvDashboardPage() {
 
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-base font-semibold md:text-xl">Meta Anual - {anoAtual}</p>
-            <p className="min-w-[92px] text-right text-sm font-semibold tabular-nums opacity-90 md:min-w-[108px] md:text-lg">
+            <p className="pr-3 text-base font-semibold md:text-xl">Meta Anual - {anoAtual}</p>
+            <p className="shrink-0 min-w-[92px] text-right text-sm font-semibold tabular-nums opacity-90 md:min-w-[108px] md:text-lg">
               {novosClientes} / {metaAnual}
             </p>
           </div>
