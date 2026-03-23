@@ -133,8 +133,8 @@ export function TvDashboardPage() {
       <div className="grid gap-6 px-6 pb-8 md:grid-cols-2 md:gap-8 md:px-14 md:pb-10">
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <p className="text-base font-semibold capitalize md:text-xl">Meta Mensal - {mesAtual}</p>
-          <p className="mt-1 text-lg font-bold tabular-nums opacity-95 md:text-2xl">
-            {novosClientes} / {metaMensal}
+          <p className="mt-1 text-xl font-extrabold text-white md:text-3xl">
+            Novos: {novosClientes} / {metaMensal}
           </p>
 
           <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
@@ -144,15 +144,15 @@ export function TvDashboardPage() {
             />
           </div>
 
-          <p className="mt-2 text-right text-xs font-medium opacity-80 md:text-sm">
-            {progressoMensal}%
+          <p className="mt-2 text-right text-sm font-semibold text-white md:text-base">
+            Progresso: {progressoMensal}%
           </p>
         </article>
 
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <p className="text-base font-semibold md:text-xl">Meta Anual - {anoAtual}</p>
-          <p className="mt-1 text-lg font-bold tabular-nums opacity-95 md:text-2xl">
-            {novosClientes} / {metaAnual}
+          <p className="mt-1 text-xl font-extrabold text-white md:text-3xl">
+            Novos: {novosClientes} / {metaAnual}
           </p>
 
           <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
@@ -162,8 +162,8 @@ export function TvDashboardPage() {
             />
           </div>
 
-          <p className="mt-2 text-right text-xs font-medium opacity-80 md:text-sm">
-            {progressoAnual}%
+          <p className="mt-2 text-right text-sm font-semibold text-white md:text-base">
+            Progresso: {progressoAnual}%
           </p>
         </article>
       </div>
@@ -172,10 +172,8 @@ export function TvDashboardPage() {
         <div className="px-6 pb-6 text-center text-xs opacity-75 md:px-14">{loadError}</div>
       ) : null}
 
-      <div className="sr-only">
-        debug-total:{totalClientes};debug-novos:{novosClientes};debug-meta-mensal:{metaMensal};
-        debug-meta-anual:{metaAnual};debug-progresso-mensal:{progressoMensal};debug-progresso-anual:
-        {progressoAnual}
+      <div className="px-6 pb-4 text-center text-xs text-white/60 md:px-14">
+        Debug: total={totalClientes} | novos={novosClientes} | mensal={metaMensal} | anual={metaAnual}
       </div>
     </main>
   )
