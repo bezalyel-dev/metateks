@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DEFAULT_DASHBOARD_CONFIG, fetchDashboardConfig } from '../lib/dashboardConfig'
 import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 
@@ -89,29 +89,16 @@ export function TvDashboardPage() {
     }
   }, [])
 
-  const { totalClientes, metaMensal, metaAnual, novosClientes, progressoMensal, progressoAnual } = useMemo(() => {
-    const total = Math.max(0, toSafeInt(config.contagem_atual, BASE_CLIENTES))
-    const mensalMeta = Math.max(0, toSafeInt(config.meta_mensal, 0))
-    const anualMeta = Math.max(0, toSafeInt(config.meta_anual, 0))
-    const novos = Math.max(0, total - BASE_CLIENTES)
+  const totalClientes = Math.max(0, toSafeInt(config.contagem_atual, BASE_CLIENTES))
+  const metaMensal = Math.max(0, toSafeInt(config.meta_mensal, 0))
+  const metaAnual = Math.max(0, toSafeInt(config.meta_anual, 0))
+  const novosClientes = Math.max(0, totalClientes - BASE_CLIENTES)
+  const progressoMensal = metaMensal > 0 ? Math.min(100, Math.round((novosClientes / metaMensal) * 100)) : 0
+  const progressoAnual = metaAnual > 0 ? Math.min(100, Math.round((novosClientes / metaAnual) * 100)) : 0
 
-    return {
-      totalClientes: total,
-      metaMensal: mensalMeta,
-      metaAnual: anualMeta,
-      novosClientes: novos,
-      progressoMensal: mensalMeta > 0 ? Math.min(100, Math.round((novos / mensalMeta) * 100)) : 0,
-      progressoAnual: anualMeta > 0 ? Math.min(100, Math.round((novos / anualMeta) * 100)) : 0,
-    }
-  }, [config])
-
-  const mesAtual = useMemo(
-    () =>
-      new Date().toLocaleDateString('pt-BR', {
-        month: 'long',
-      }),
-    [],
-  )
+  const mesAtual = new Date().toLocaleDateString('pt-BR', {
+    month: 'long',
+  })
   const anoAtual = new Date().getFullYear()
 
   return (
