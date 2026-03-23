@@ -89,26 +89,21 @@ export function TvDashboardPage() {
     }
   }, [])
 
-  const { totalClientes, metaMensal, metaAnual, mensalAtual, anualAtual, progressoMensal, progressoAnual } =
-    useMemo(() => {
-      const total = Math.max(0, toSafeInt(config.contagem_atual, BASE_CLIENTES))
-      const mensalMeta = Math.max(0, toSafeInt(config.meta_mensal, 0))
-      const anualMeta = Math.max(0, toSafeInt(config.meta_anual, 0))
-      const ganhosDesdeBase = Math.max(0, total - BASE_CLIENTES)
+  const { totalClientes, metaMensal, metaAnual, novosClientes, progressoMensal, progressoAnual } = useMemo(() => {
+    const total = Math.max(0, toSafeInt(config.contagem_atual, BASE_CLIENTES))
+    const mensalMeta = Math.max(0, toSafeInt(config.meta_mensal, 0))
+    const anualMeta = Math.max(0, toSafeInt(config.meta_anual, 0))
+    const novos = Math.max(0, total - BASE_CLIENTES)
 
-      const mensal = ganhosDesdeBase
-      const anual = ganhosDesdeBase
-
-      return {
-        totalClientes: total,
-        metaMensal: mensalMeta,
-        metaAnual: anualMeta,
-        mensalAtual: mensal,
-        anualAtual: anual,
-        progressoMensal: mensalMeta > 0 ? Math.min(100, Math.round((mensal / mensalMeta) * 100)) : 0,
-        progressoAnual: anualMeta > 0 ? Math.min(100, Math.round((anual / anualMeta) * 100)) : 0,
-      }
-    }, [config])
+    return {
+      totalClientes: total,
+      metaMensal: mensalMeta,
+      metaAnual: anualMeta,
+      novosClientes: novos,
+      progressoMensal: mensalMeta > 0 ? Math.min(100, Math.round((novos / mensalMeta) * 100)) : 0,
+      progressoAnual: anualMeta > 0 ? Math.min(100, Math.round((novos / anualMeta) * 100)) : 0,
+    }
+  }, [config])
 
   const mesAtual = useMemo(
     () =>
@@ -152,8 +147,8 @@ export function TvDashboardPage() {
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-base font-semibold capitalize md:text-xl">Meta Mensal - {mesAtual}</p>
-            <p className="text-sm font-medium opacity-90 md:text-lg">
-              {mensalAtual} / {metaMensal}
+            <p className="min-w-[92px] text-right text-sm font-semibold tabular-nums opacity-90 md:min-w-[108px] md:text-lg">
+              {novosClientes} / {metaMensal}
             </p>
           </div>
 
@@ -172,8 +167,8 @@ export function TvDashboardPage() {
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-base font-semibold md:text-xl">Meta Anual - {anoAtual}</p>
-            <p className="text-sm font-medium opacity-90 md:text-lg">
-              {anualAtual} / {metaAnual}
+            <p className="min-w-[92px] text-right text-sm font-semibold tabular-nums opacity-90 md:min-w-[108px] md:text-lg">
+              {novosClientes} / {metaAnual}
             </p>
           </div>
 
