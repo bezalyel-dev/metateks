@@ -1,68 +1,134 @@
-export function TvDashboardPage() {
-  const totalClientes = 500
-  const metaMensal = 20
-  const metaAnual = 240
-  const mensalAtual = 0
-  const anualAtual = 0
+import { useEffect, useMemo, useState } from 'react'
+import { DEFAULT_DASHBOARD_CONFIG, fetchDashboardConfig } from '../lib/dashboardConfig'
+import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 
-  const progressoMensal = Math.min(100, Math.round((mensalAtual / metaMensal) * 100))
-  const progressoAnual = Math.min(100, Math.round((anualAtual / metaAnual) * 100))
+const BASE_CLIENTES = 500
+
+export function TvDashboardPage() {
+  const [config, setConfig] = useState(DEFAULT_DASHBOARD_CONFIG)
+  const [loadError, setLoadError] = useState('')
+
+  useEffect(() => {
+    if (!supabase) {
+      setLoadError(supabaseEnvError)
+      return
+    }
+
+    let isActive = true
+
+    const refreshConfig = async () => {
+      try {
+        const row = await fetchDashboardConfig(supabase)
+        if (row && isActive) {
+          setConfig(row)
+          setLoadError('')
+        }
+      } catch (error) {
+        if (isActive) {
+          setLoadError(error.message)
+        }
+      }
+    }
+
+    refreshConfig()
+
+    const intervalId = setInterval(refreshConfig, 5000)
+
+    return () => {
+      isActive = false
+      clearInterval(intervalId)
+    }
+  }, [])
+
+  const { mensalAtual, anualAtual, progressoMensal, progressoAnual } = useMemo(() => {
+    const ganhosDesdeBase = Math.max(0, Number(config.contagem_atual) - BASE_CLIENTES)
+    const mensal = Math.min(ganhosDesdeBase, Math.max(0, Number(config.meta_mensal)))
+    const anual = Math.min(ganhosDesdeBase, Math.max(0, Number(config.meta_anual)))
+
+    return {
+      mensalAtual: mensal,
+      anualAtual: anual,
+      progressoMensal:
+        config.meta_mensal > 0 ? Math.min(100, Math.round((mensal / config.meta_mensal) * 100)) : 0,
+      progressoAnual:
+        config.meta_anual > 0 ? Math.min(100, Math.round((anual / config.meta_anual) * 100)) : 0,
+    }
+  }, [config])
 
   return (
-    <main className="flex min-h-screen flex-col bg-slate-950 text-white">
+    <main
+      className="flex min-h-screen flex-col overflow-hidden"
+      style={{
+        backgroundColor: config.cor_fundo,
+        color: config.cor_texto,
+        fontFamily: config.familia_fonte,
+      }}
+    >
       <header className="px-8 pt-8 md:px-14 md:pt-10">
-        <p className="text-center text-lg font-semibold uppercase tracking-[0.35em] text-slate-300 md:text-2xl">
-          Teks Software
-        </p>
+        {config.url_logo ? (
+          <img
+            src={config.url_logo}
+            alt="Logo Teks Software"
+            className="mx-auto max-h-16 w-auto object-contain md:max-h-20"
+          />
+        ) : (
+          <p className="text-center text-lg font-semibold uppercase tracking-[0.35em] opacity-80 md:text-2xl">
+            Teks Software
+          </p>
+        )}
       </header>
 
       <section className="flex flex-1 items-center justify-center px-4">
-        <h1 className="text-center text-[72px] font-extrabold leading-none tracking-tight text-white drop-shadow-[0_0_35px_rgba(255,255,255,0.18)] sm:text-[98px] md:text-[132px] lg:text-[170px]">
-          {totalClientes} clientes
+        <h1 className="text-center text-[72px] font-extrabold leading-none tracking-tight drop-shadow-[0_0_35px_rgba(255,255,255,0.18)] sm:text-[98px] md:text-[132px] lg:text-[170px]">
+          {config.contagem_atual} clientes
         </h1>
       </section>
 
       <div className="grid gap-6 px-6 pb-8 md:grid-cols-2 md:gap-8 md:px-14 md:pb-10">
-        <article className="rounded-2xl border border-slate-800/80 bg-slate-900/65 p-5 backdrop-blur-sm md:p-6">
+        <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-base font-semibold text-slate-200 md:text-xl">Meta Mensal</p>
-            <p className="text-sm font-medium text-slate-300 md:text-lg">
-              {mensalAtual} / {metaMensal}
+            <p className="text-base font-semibold md:text-xl">Meta Mensal</p>
+            <p className="text-sm font-medium opacity-90 md:text-lg">
+              {mensalAtual} / {config.meta_mensal}
             </p>
           </div>
 
-          <div className="h-4 w-full overflow-hidden rounded-full bg-slate-800 md:h-5">
+          <div className="h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
             <div
               className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-500 transition-all duration-700"
               style={{ width: `${progressoMensal}%` }}
             />
           </div>
 
-          <p className="mt-2 text-right text-xs font-medium text-slate-400 md:text-sm">
+          <p className="mt-2 text-right text-xs font-medium opacity-80 md:text-sm">
             {progressoMensal}%
           </p>
         </article>
 
-        <article className="rounded-2xl border border-slate-800/80 bg-slate-900/65 p-5 backdrop-blur-sm md:p-6">
+        <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-base font-semibold text-slate-200 md:text-xl">Meta Anual</p>
-            <p className="text-sm font-medium text-slate-300 md:text-lg">
-              {anualAtual} / {metaAnual}
+            <p className="text-base font-semibold md:text-xl">Meta Anual</p>
+            <p className="text-sm font-medium opacity-90 md:text-lg">
+              {anualAtual} / {config.meta_anual}
             </p>
           </div>
 
-          <div className="h-4 w-full overflow-hidden rounded-full bg-slate-800 md:h-5">
+          <div className="h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
             <div
               className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-700"
               style={{ width: `${progressoAnual}%` }}
             />
           </div>
 
-          <p className="mt-2 text-right text-xs font-medium text-slate-400 md:text-sm">
+          <p className="mt-2 text-right text-xs font-medium opacity-80 md:text-sm">
             {progressoAnual}%
           </p>
         </article>
       </div>
+
+      {loadError ? (
+        <div className="px-6 pb-6 text-center text-xs opacity-75 md:px-14">{loadError}</div>
+      ) : null}
     </main>
   )
 }
