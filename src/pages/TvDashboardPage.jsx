@@ -145,14 +145,12 @@ export function TvDashboardPage() {
 
       <div className="grid gap-6 px-6 pb-8 md:grid-cols-2 md:gap-8 md:px-14 md:pb-10">
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="pr-3 text-base font-semibold capitalize md:text-xl">Meta Mensal - {mesAtual}</p>
-            <p className="shrink-0 min-w-[92px] text-right text-sm font-semibold tabular-nums opacity-90 md:min-w-[108px] md:text-lg">
-              {novosClientes} / {metaMensal}
-            </p>
-          </div>
+          <p className="text-base font-semibold capitalize md:text-xl">Meta Mensal - {mesAtual}</p>
+          <p className="mt-1 text-lg font-bold tabular-nums opacity-95 md:text-2xl">
+            {novosClientes} / {metaMensal}
+          </p>
 
-          <div className="h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
+          <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
             <div
               className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-500 transition-all duration-700"
               style={{ width: `${progressoMensal}%` }}
@@ -165,14 +163,12 @@ export function TvDashboardPage() {
         </article>
 
         <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="pr-3 text-base font-semibold md:text-xl">Meta Anual - {anoAtual}</p>
-            <p className="shrink-0 min-w-[92px] text-right text-sm font-semibold tabular-nums opacity-90 md:min-w-[108px] md:text-lg">
-              {novosClientes} / {metaAnual}
-            </p>
-          </div>
+          <p className="text-base font-semibold md:text-xl">Meta Anual - {anoAtual}</p>
+          <p className="mt-1 text-lg font-bold tabular-nums opacity-95 md:text-2xl">
+            {novosClientes} / {metaAnual}
+          </p>
 
-          <div className="h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
+          <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
             <div
               className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-700"
               style={{ width: `${progressoAnual}%` }}
@@ -188,6 +184,12 @@ export function TvDashboardPage() {
       {loadError ? (
         <div className="px-6 pb-6 text-center text-xs opacity-75 md:px-14">{loadError}</div>
       ) : null}
+
+      <div className="sr-only">
+        debug-total:{totalClientes};debug-novos:{novosClientes};debug-meta-mensal:{metaMensal};
+        debug-meta-anual:{metaAnual};debug-progresso-mensal:{progressoMensal};debug-progresso-anual:
+        {progressoAnual}
+      </div>
     </main>
   )
 }
