@@ -141,16 +141,16 @@ export function TvDashboardPage() {
       </section>
 
       <div className="grid gap-6 px-6 pb-8 md:grid-cols-2 md:gap-8 md:px-14 md:pb-10">
-        <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
+        <article className="rounded-2xl border border-white/15 bg-black/20 p-5 md:p-6">
           <p className="text-base font-semibold capitalize md:text-xl">Meta Mensal - {mesAtual}</p>
           <p className="mt-1 text-xl font-extrabold text-white md:text-3xl">
             Novos: {novosClientes} / {metaMensal}
           </p>
 
-          <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
+          <div className="mt-3 h-4 w-full rounded-full bg-black/30 md:h-5" style={{ isolation: 'isolate' }}>
             <div
               className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-500 transition-all duration-700"
-              style={{ width: `${progressoMensal}%` }}
+              style={{ width: `${progressoMensal}%`, maxWidth: '100%' }}
             />
           </div>
 
@@ -159,16 +159,16 @@ export function TvDashboardPage() {
           </p>
         </article>
 
-        <article className="rounded-2xl border border-white/15 bg-black/20 p-5 backdrop-blur-sm md:p-6">
+        <article className="rounded-2xl border border-white/15 bg-black/20 p-5 md:p-6">
           <p className="text-base font-semibold md:text-xl">Meta Anual - {anoAtual}</p>
           <p className="mt-1 text-xl font-extrabold text-white md:text-3xl">
             Novos: {novosClientes} / {metaAnual}
           </p>
 
-          <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-black/30 md:h-5">
+          <div className="mt-3 h-4 w-full rounded-full bg-black/30 md:h-5" style={{ isolation: 'isolate' }}>
             <div
               className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-700"
-              style={{ width: `${progressoAnual}%` }}
+              style={{ width: `${progressoAnual}%`, maxWidth: '100%' }}
             />
           </div>
 
