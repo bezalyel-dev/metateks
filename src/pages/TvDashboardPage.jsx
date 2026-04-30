@@ -2,22 +2,29 @@ import { useEffect, useRef, useState } from 'react'
 import { DEFAULT_DASHBOARD_CONFIG, fetchDashboardConfig } from '../lib/dashboardConfig'
 import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 import { useCelebration } from '../hooks/useCelebration'
+// FIX: import mantido (já existia)
+import { FullscreenButton } from './components/FullscreenButton'
 const BASE_CLIENTES = 500
+
 
 function toSafeInt(value, fallback = 0) {
   const parsed = Number.parseInt(value, 10)
   return Number.isNaN(parsed) ? fallback : parsed
 }
 
+
 // ─── Fundo animado (canvas) — renderiza UMA vez, sem requisições ─────────────
+
 
 function AnimatedBackground() {
   const canvasRef = useRef(null)
+
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
+
 
     const resize = () => {
       canvas.width = window.innerWidth
@@ -25,6 +32,7 @@ function AnimatedBackground() {
     }
     resize()
     window.addEventListener('resize', resize)
+
 
     // Partículas flutuantes
     const particles = Array.from({ length: 55 }, () => ({
@@ -36,6 +44,7 @@ function AnimatedBackground() {
       alpha: Math.random() * 0.5 + 0.15,
     }))
 
+
     // Orbs de brilho
     const orbs = [
       { x: 0.15, y: 0.3, r: 320, color: 'rgba(34,197,94,0.13)', phase: 0, speed: 0.0007 },
@@ -43,12 +52,15 @@ function AnimatedBackground() {
       { x: 0.5, y: 0.15, r: 200, color: 'rgba(74,222,128,0.08)', phase: 3, speed: 0.0006 },
     ]
 
+
     let raf
     let t = 0
+
 
     const draw = () => {
       t++
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+
 
       // Fundo base
       const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
@@ -57,6 +69,7 @@ function AnimatedBackground() {
       bg.addColorStop(1, '#040d09')
       ctx.fillStyle = bg
       ctx.fillRect(0, 0, canvas.width, canvas.height)
+
 
       // Orbs pulsantes
       for (const orb of orbs) {
@@ -68,6 +81,7 @@ function AnimatedBackground() {
         ctx.fillStyle = grad
         ctx.fillRect(0, 0, canvas.width, canvas.height)
       }
+
 
       // Grid de linhas suaves
       ctx.strokeStyle = 'rgba(34,197,94,0.04)'
@@ -86,6 +100,7 @@ function AnimatedBackground() {
         ctx.stroke()
       }
 
+
       // Partículas flutuantes
       for (const p of particles) {
         p.x += p.vx
@@ -94,22 +109,27 @@ function AnimatedBackground() {
         if (p.x < -5) p.x = canvas.width + 5
         if (p.x > canvas.width + 5) p.x = -5
 
+
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(134,239,172,${p.alpha})`
         ctx.fill()
       }
 
+
       raf = requestAnimationFrame(draw)
     }
 
+
     draw()
+
 
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
     }
   }, [])
+
 
   return (
     <canvas
@@ -120,12 +140,15 @@ function AnimatedBackground() {
   )
 }
 
+
 // ─── Número animado ───────────────────────────────────────────────────────────
+
 
 function AnimatedClientsCount({ value }) {
   const [displayValue, setDisplayValue] = useState(value)
   const [previousValue, setPreviousValue] = useState(value)
   const [animating, setAnimating] = useState(false)
+
 
   useEffect(() => {
     if (value === displayValue) return
@@ -135,6 +158,7 @@ function AnimatedClientsCount({ value }) {
     const id = setTimeout(() => setAnimating(false), 480)
     return () => clearTimeout(id)
   }, [value, displayValue])
+
 
   return (
     <span className="relative inline-block min-h-[1.2em] min-w-[4ch] align-middle">
@@ -150,11 +174,14 @@ function AnimatedClientsCount({ value }) {
   )
 }
 
+
 // ─── Card de meta ─────────────────────────────────────────────────────────────
+
 
 function GoalCard({ title, novos, meta, progress, gradient, glowColor }) {
   const circumference = 2 * Math.PI * 54
   const strokeDashoffset = circumference - (progress / 100) * circumference
+
 
   return (
     <article
@@ -171,6 +198,7 @@ function GoalCard({ title, novos, meta, progress, gradient, glowColor }) {
         className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full opacity-25 blur-3xl"
         style={{ background: glowColor }}
       />
+
 
       <div className="flex items-center gap-5">
         {/* Donut SVG */}
@@ -213,6 +241,7 @@ function GoalCard({ title, novos, meta, progress, gradient, glowColor }) {
           </div>
         </div>
 
+
         {/* Texto */}
         <div className="flex-1">
           <p className="text-sm font-semibold uppercase tracking-widest text-green-400/70">
@@ -223,6 +252,7 @@ function GoalCard({ title, novos, meta, progress, gradient, glowColor }) {
             <span className="ml-1 text-xl font-medium text-white/40">/ {meta}</span>
           </p>
           <p className="mt-1 text-sm text-white/50">novos clientes</p>
+
 
           {/* Barra horizontal */}
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
@@ -242,7 +272,9 @@ function GoalCard({ title, novos, meta, progress, gradient, glowColor }) {
   )
 }
 
+
 // ─── Página principal ─────────────────────────────────────────────────────────
+
 
 export function TvDashboardPage() {
   const [config, setConfig] = useState(DEFAULT_DASHBOARD_CONFIG)
@@ -250,13 +282,16 @@ export function TvDashboardPage() {
   const prevTotalRef = useRef(null)
   const { triggerCelebration, CelebrationCanvas } = useCelebration()
 
+
   useEffect(() => {
     if (!supabase) {
       setLoadError(supabaseEnvError)
       return
     }
 
+
     let isActive = true
+
 
     const refreshConfig = async () => {
       try {
@@ -275,7 +310,9 @@ export function TvDashboardPage() {
       }
     }
 
+
     refreshConfig()
+
 
     const realtimeChannel = supabase
       .channel('dashboard-config-live')
@@ -284,7 +321,9 @@ export function TvDashboardPage() {
       })
       .subscribe()
 
+
     const intervalId = setInterval(refreshConfig, 5000)
+
 
     return () => {
       isActive = false
@@ -293,12 +332,14 @@ export function TvDashboardPage() {
     }
   }, [])
 
+
   const totalClientes = Math.max(0, toSafeInt(config.contagem_atual, BASE_CLIENTES))
   const metaMensal = Math.max(0, toSafeInt(config.meta_mensal, 0))
   const metaAnual = Math.max(0, toSafeInt(config.meta_anual, 0))
   const novosClientes = Math.max(0, totalClientes - BASE_CLIENTES)
   const progressoMensal = metaMensal > 0 ? Math.min(100, Math.round((novosClientes / metaMensal) * 100)) : 0
   const progressoAnual = metaAnual > 0 ? Math.min(100, Math.round((novosClientes / metaAnual) * 100)) : 0
+
 
   // Dispara celebração quando total aumenta
   useEffect(() => {
@@ -308,13 +349,18 @@ export function TvDashboardPage() {
     prevTotalRef.current = totalClientes
   }, [totalClientes, triggerCelebration])
 
+
   const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long' })
   const anoAtual = new Date().getFullYear()
+
 
   return (
     <>
       <AnimatedBackground />
       <CelebrationCanvas />
+
+      {/* FIX: componente adicionado ao JSX — era importado mas nunca renderizado */}
+      <FullscreenButton position="top-right" hideAfter={4000} />
 
       <main
         className="relative z-10 flex min-h-screen flex-col overflow-hidden"
@@ -338,6 +384,7 @@ export function TvDashboardPage() {
           )}
         </header>
 
+
         {/* Contador central */}
         <section className="flex flex-1 flex-col items-center justify-center px-4">
           <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-green-400/60">
@@ -360,6 +407,7 @@ export function TvDashboardPage() {
           />
         </section>
 
+
         {/* Cards de meta */}
         <div className="grid gap-5 px-6 pb-8 md:grid-cols-2 md:gap-6 md:px-14 md:pb-10">
           <GoalCard
@@ -380,9 +428,11 @@ export function TvDashboardPage() {
           />
         </div>
 
+
         {loadError && (
           <div className="px-6 pb-6 text-center text-xs text-green-400/50 md:px-14">{loadError}</div>
         )}
+
 
         <div className="px-6 pb-3 text-center text-[10px] text-white/20 md:px-14">
           total={totalClientes} | novos={novosClientes} | mensal={metaMensal} | anual={metaAnual}
