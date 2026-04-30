@@ -18,50 +18,92 @@ import { useCallback, useEffect, useRef } from 'react'
 
 function playFireworkSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const AudioCtx = window.AudioContext || window.webkitAudioContext
+    const ctx = new AudioCtx()
+    if (ctx.state === 'suspended') ctx.resume()
 
-    // Ruído branco curto (estalo)
-    const bufferSize = ctx.sampleRate * 0.18
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
-    const data = buffer.getChannelData(0)
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2)
+    const now = ctx.currentTime
+
+    // ── Master + Compressor ────────────────────────────────────────
+    const compressor = ctx.createDynamicsCompressor()
+    compressor.threshold.setValueAtTime(-20, now)
+    compressor.knee.setValueAtTime(8, now)
+    compressor.ratio.setValueAtTime(14, now)
+    compressor.attack.setValueAtTime(0.001, now)
+    compressor.release.setValueAtTime(0.15, now)
+    compressor.connect(ctx.destination)
+
+    const master = ctx.createGain()
+    master.gain.setValueAtTime(2.6, now)
+    master.connect(compressor)
+
+    // ── Distorção leve para timbre metálico de corneta ─────────────
+    const shaper = ctx.createWaveShaper()
+    const CURVE = 512
+    const curve = new Float32Array(CURVE)
+    for (let i = 0; i < CURVE; i++) {
+      const x = (i / (CURVE - 1)) * 2 - 1
+      curve[i] = Math.tanh(x * 2.0)
+    }
+    shaper.curve = curve
+    shaper.oversample = '4x'
+    shaper.connect(master)
+
+    // ── Filtro passa-banda: corta graves e agudos, realça médio-alto ─
+    const bandpass = ctx.createBiquadFilter()
+    bandpass.type = 'bandpass'
+    bandpass.frequency.setValueAtTime(1200, now)
+    bandpass.Q.setValueAtTime(0.7, now)
+    bandpass.connect(shaper)
+
+    // ── PeriodicWave de brass (harmônicos de corneta/trompete) ──────
+    const real = new Float32Array([0, 1.0, 0.7, 0.5, 0.35, 0.2, 0.12, 0.07, 0.04])
+    const imag = new Float32Array(real.length)
+    const brassWave = ctx.createPeriodicWave(real, imag)
+
+    // ── Toca uma nota com envelope ADSR ────────────────────────────
+    const playNote = (freq, startTime, duration, volume = 1.0) => {
+      const osc = ctx.createOscillator()
+      osc.setPeriodicWave(brassWave)
+      osc.frequency.setValueAtTime(freq, startTime)
+
+      // Detune mínimo para humanizar
+      osc.detune.setValueAtTime((Math.random() - 0.5) * 6, startTime)
+
+      const g = ctx.createGain()
+      const attack  = 0.018
+      const release = 0.06
+
+      g.gain.setValueAtTime(0.0001, startTime)
+      g.gain.linearRampToValueAtTime(volume, startTime + attack)
+      g.gain.setValueAtTime(volume * 0.88, startTime + attack + 0.01)
+      g.gain.setValueAtTime(volume * 0.88, startTime + duration - release)
+      g.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
+
+      osc.connect(g)
+      g.connect(bandpass)
+
+      osc.start(startTime)
+      osc.stop(startTime + duration + 0.05)
     }
 
-    const source = ctx.createBufferSource()
-    source.buffer = buffer
+    // ── Sequência "Corneta Atenção" ────────────────────────────────
+    // Notas: Sol4 · Sol4 · Sol4 · Do5 · Mi5 · Sol5 · Do6(longa)
+    // Frequências:  392   392   392   523   659   784   1047
+    const bpm     = 160                     // andamento
+    const beat    = 60 / bpm               // 0.375s por beat
 
-    // Filtro bandpass para dar "caráter" ao som
-    const filter = ctx.createBiquadFilter()
-    filter.type = 'bandpass'
-    filter.frequency.value = 800
-    filter.Q.value = 0.5
+    playNote(392,  now + 0.00,          beat * 0.45)   // Sol4
+    playNote(392,  now + beat * 0.5,    beat * 0.45)   // Sol4
+    playNote(392,  now + beat * 1.0,    beat * 0.45)   // Sol4
+    playNote(523,  now + beat * 1.5,    beat * 0.45)   // Do5
+    playNote(659,  now + beat * 2.0,    beat * 0.45)   // Mi5
+    playNote(784,  now + beat * 2.5,    beat * 0.45)   // Sol5
+    playNote(1047, now + beat * 3.0,    beat * 2.8)    // Do6 — nota longa final
 
-    // Ganho com envelope rápido
-    const gain = ctx.createGain()
-    gain.gain.setValueAtTime(1.2, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18)
-
-    source.connect(filter)
-    filter.connect(gain)
-    gain.connect(ctx.destination)
-    source.start()
-    source.stop(ctx.currentTime + 0.2)
-
-    // Tom "whoosh" ascendente
-    const osc = ctx.createOscillator()
-    const oscGain = ctx.createGain()
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(220, ctx.currentTime)
-    osc.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 0.12)
-    oscGain.gain.setValueAtTime(0.4, ctx.currentTime)
-    oscGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15)
-    osc.connect(oscGain)
-    oscGain.connect(ctx.destination)
-    osc.start()
-    osc.stop(ctx.currentTime + 0.15)
+    setTimeout(() => ctx.close().catch(() => {}), 4000)
   } catch {
-    // Navegadores sem Web Audio API — silêncio gracioso
+    // silêncio gracioso
   }
 }
 

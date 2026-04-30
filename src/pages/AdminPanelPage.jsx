@@ -7,6 +7,7 @@ import {
 } from '../lib/dashboardConfig'
 import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 
+
 const FONT_OPTIONS = [
   { label: 'Inter (Padrão)', value: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif' },
   { label: 'Roboto', value: 'Roboto, Arial, sans-serif' },
@@ -15,6 +16,7 @@ const FONT_OPTIONS = [
   { label: 'Fira Mono', value: 'Fira Mono, Consolas, monospace' },
 ]
 
+
 export function AdminPanelPage() {
   const navigate = useNavigate()
   const [config, setConfig] = useState({ ...DEFAULT_DASHBOARD_CONFIG, id: '' })
@@ -22,6 +24,7 @@ export function AdminPanelPage() {
   const [saving, setSaving] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [error, setError] = useState('')
+
 
   useEffect(() => {
     if (!supabase) {
@@ -45,25 +48,25 @@ export function AdminPanelPage() {
     load()
   }, [])
 
+
   async function handleLogout() {
     if (!supabase) {
       navigate('/admin/login')
       return
     }
-
     await supabase.auth.signOut()
     navigate('/admin/login')
   }
+
 
   function updateLocalField(field, value) {
     setFeedback('')
     setConfig((prev) => ({ ...prev, [field]: value }))
   }
 
+
   async function saveConfig(nextValues) {
-    if (!supabase || !config.id) {
-      return
-    }
+    if (!supabase || !config.id) return
 
     setSaving(true)
     setError('')
@@ -72,7 +75,7 @@ export function AdminPanelPage() {
     try {
       const updated = await updateDashboardConfig(supabase, config.id, nextValues)
       setConfig(updated)
-      setFeedback('Alteracoes salvas com sucesso.')
+      setFeedback('Alterações salvas com sucesso.')
     } catch (saveError) {
       setError(saveError.message)
     } finally {
@@ -80,36 +83,45 @@ export function AdminPanelPage() {
     }
   }
 
+
   async function handleSaveAll(event) {
     event.preventDefault()
 
     await saveConfig({
-      contagem_atual: Number(config.contagem_atual) || 0,
-      meta_mensal: Number(config.meta_mensal) || 0,
-      meta_anual: Number(config.meta_anual) || 0,
-      cor_fundo: config.cor_fundo,
-      cor_texto: config.cor_texto,
-      familia_fonte: config.familia_fonte,
-      url_logo: config.url_logo.trim(),
+      contagem_atual:  Number(config.contagem_atual)  || 0,
+      clientes_mes:    Number(config.clientes_mes)    || 0,
+      meta_mensal:     Number(config.meta_mensal)     || 0,
+      meta_anual:      Number(config.meta_anual)      || 0,
+      cor_fundo:       config.cor_fundo,
+      cor_texto:       config.cor_texto,
+      familia_fonte:   config.familia_fonte,
+      url_logo:        config.url_logo.trim(),
     })
   }
 
+
+  // Ajusta total geral e, em sincronia, clientes do mês (+1 / -1)
   async function adjustCount(delta) {
-    const nextValue = Math.max(0, Number(config.contagem_atual) + delta)
-    await saveConfig({ contagem_atual: nextValue })
+    const nextTotal = Math.max(0, Number(config.contagem_atual) + delta)
+    const nextMes   = Math.max(0, Number(config.clientes_mes)   + delta)
+    await saveConfig({ contagem_atual: nextTotal, clientes_mes: nextMes })
   }
+
 
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-700">
-        Carregando configuracoes...
+        Carregando configurações...
       </main>
     )
   }
 
+
   return (
     <main className="min-h-screen bg-slate-50 p-6 md:p-10">
       <div className="mx-auto max-w-5xl rounded-2xl bg-white p-8 shadow-sm">
+
+        {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold text-slate-900">Painel do Administrador</h1>
           <button
@@ -134,19 +146,44 @@ export function AdminPanelPage() {
           </p>
         ) : null}
 
+
         <form onSubmit={handleSaveAll} className="mt-8 space-y-8">
+
+          {/* ── Seção de números ─────────────────────────────────────────── */}
           <section className="rounded-2xl border border-slate-200 p-5 md:p-6">
             <h2 className="text-lg font-semibold text-slate-900">Atualizar Números</h2>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-slate-700">Total de clientes</span>
                 <input
                   type="number"
                   min="0"
                   value={config.contagem_atual}
-                  onChange={(event) => updateLocalField('contagem_atual', event.target.value)}
+                  onChange={(e) => updateLocalField('contagem_atual', e.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none ring-blue-500 focus:ring-2"
                 />
+              </label>
+
+              {/* NOVO: clientes do mês */}
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">
+                  Clientes no mês
+                  <span className="ml-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                    novo
+                  </span>
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  value={config.clientes_mes}
+                  onChange={(e) => updateLocalField('clientes_mes', e.target.value)}
+                  className="w-full rounded-lg border border-emerald-300 px-3 py-2 outline-none ring-emerald-500 focus:ring-2"
+                />
+                <p className="mt-1 text-xs text-slate-400">
+                  Sincronizado com a meta mensal no dashboard.
+                </p>
               </label>
 
               <label className="block">
@@ -155,7 +192,7 @@ export function AdminPanelPage() {
                   type="number"
                   min="0"
                   value={config.meta_mensal}
-                  onChange={(event) => updateLocalField('meta_mensal', event.target.value)}
+                  onChange={(e) => updateLocalField('meta_mensal', e.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none ring-blue-500 focus:ring-2"
                 />
               </label>
@@ -166,13 +203,15 @@ export function AdminPanelPage() {
                   type="number"
                   min="0"
                   value={config.meta_anual}
-                  onChange={(event) => updateLocalField('meta_anual', event.target.value)}
+                  onChange={(e) => updateLocalField('meta_anual', e.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none ring-blue-500 focus:ring-2"
                 />
               </label>
+
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-3">
+            {/* Ações rápidas */}
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => adjustCount(1)}
@@ -189,16 +228,23 @@ export function AdminPanelPage() {
               >
                 -1 Cliente
               </button>
+
+              <span className="text-xs text-slate-400">
+                +1 / -1 atualiza total e clientes do mês juntos.
+              </span>
+
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                className="ml-auto rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
               >
                 {saving ? 'Salvando...' : 'Salvar números'}
               </button>
             </div>
           </section>
 
+
+          {/* ── Seção visual ─────────────────────────────────────────────── */}
           <section className="rounded-2xl border border-slate-200 p-5 md:p-6">
             <h2 className="text-lg font-semibold text-slate-900">Personalizar Visual da TV</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -207,7 +253,7 @@ export function AdminPanelPage() {
                 <input
                   type="color"
                   value={config.cor_fundo}
-                  onChange={(event) => updateLocalField('cor_fundo', event.target.value)}
+                  onChange={(e) => updateLocalField('cor_fundo', e.target.value)}
                   className="h-11 w-full rounded-lg border border-slate-300 bg-white px-2 py-1"
                 />
               </label>
@@ -217,7 +263,7 @@ export function AdminPanelPage() {
                 <input
                   type="color"
                   value={config.cor_texto}
-                  onChange={(event) => updateLocalField('cor_texto', event.target.value)}
+                  onChange={(e) => updateLocalField('cor_texto', e.target.value)}
                   className="h-11 w-full rounded-lg border border-slate-300 bg-white px-2 py-1"
                 />
               </label>
@@ -228,7 +274,7 @@ export function AdminPanelPage() {
                 <span className="mb-1 block text-sm font-medium text-slate-700">Fonte</span>
                 <select
                   value={config.familia_fonte}
-                  onChange={(event) => updateLocalField('familia_fonte', event.target.value)}
+                  onChange={(e) => updateLocalField('familia_fonte', e.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none ring-blue-500 focus:ring-2"
                 >
                   {FONT_OPTIONS.map((font) => (
@@ -245,7 +291,7 @@ export function AdminPanelPage() {
                   type="url"
                   placeholder="https://..."
                   value={config.url_logo}
-                  onChange={(event) => updateLocalField('url_logo', event.target.value)}
+                  onChange={(e) => updateLocalField('url_logo', e.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none ring-blue-500 focus:ring-2"
                 />
               </label>
@@ -261,6 +307,7 @@ export function AdminPanelPage() {
               </button>
             </div>
           </section>
+
         </form>
       </div>
     </main>

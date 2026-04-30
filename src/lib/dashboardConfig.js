@@ -1,7 +1,8 @@
 export const DEFAULT_DASHBOARD_CONFIG = {
-  contagem_atual: 500,
-  meta_mensal: 20,
-  meta_anual: 240,
+  contagem_atual: 0,
+  clientes_mes:   0,   // ← adicionar aqui
+  meta_mensal: 0,
+  meta_anual: 0,
   cor_fundo: '#020b35',
   cor_texto: '#f8fafc',
   familia_fonte: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
@@ -13,17 +14,18 @@ function normalizeConfig(row) {
     return null
   }
 
-  return {
-    id: row.id,
-    contagem_atual: row.contagem_atual ?? DEFAULT_DASHBOARD_CONFIG.contagem_atual,
-    meta_mensal: row.meta_mensal ?? DEFAULT_DASHBOARD_CONFIG.meta_mensal,
-    meta_anual: row.meta_anual ?? DEFAULT_DASHBOARD_CONFIG.meta_anual,
-    cor_fundo: row.cor_fundo ?? DEFAULT_DASHBOARD_CONFIG.cor_fundo,
-    cor_texto: row.cor_texto ?? DEFAULT_DASHBOARD_CONFIG.cor_texto,
-    familia_fonte: row.familia_fonte ?? DEFAULT_DASHBOARD_CONFIG.familia_fonte,
-    url_logo: row.url_logo ?? DEFAULT_DASHBOARD_CONFIG.url_logo,
-    updated_at: row.updated_at ?? null,
-  }
+return {
+  id:             row.id,
+  contagem_atual: row.contagem_atual ?? DEFAULT_DASHBOARD_CONFIG.contagem_atual,
+  clientes_mes:   row.clientes_mes   ?? DEFAULT_DASHBOARD_CONFIG.clientes_mes,
+  meta_mensal:    row.meta_mensal    ?? DEFAULT_DASHBOARD_CONFIG.meta_mensal,
+  meta_anual:     row.meta_anual     ?? DEFAULT_DASHBOARD_CONFIG.meta_anual,
+  cor_fundo:      row.cor_fundo      ?? DEFAULT_DASHBOARD_CONFIG.cor_fundo,
+  cor_texto:      row.cor_texto      ?? DEFAULT_DASHBOARD_CONFIG.cor_texto,
+  familia_fonte:  row.familia_fonte  ?? DEFAULT_DASHBOARD_CONFIG.familia_fonte,
+  url_logo:       row.url_logo       ?? DEFAULT_DASHBOARD_CONFIG.url_logo,
+  updated_at:     row.updated_at     ?? null,
+}
 }
 
 export async function fetchDashboardConfig(client) {
