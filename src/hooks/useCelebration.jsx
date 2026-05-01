@@ -22,86 +22,45 @@ function playFireworkSound() {
     const ctx = new AudioCtx()
     if (ctx.state === 'suspended') ctx.resume()
 
-    const now = ctx.currentTime
-
-    // ── Master + Compressor ────────────────────────────────────────
-    const compressor = ctx.createDynamicsCompressor()
-    compressor.threshold.setValueAtTime(-20, now)
-    compressor.knee.setValueAtTime(8, now)
-    compressor.ratio.setValueAtTime(14, now)
-    compressor.attack.setValueAtTime(0.001, now)
-    compressor.release.setValueAtTime(0.15, now)
-    compressor.connect(ctx.destination)
-
-    const master = ctx.createGain()
-    master.gain.setValueAtTime(2.6, now)
-    master.connect(compressor)
-
-    // ── Distorção leve para timbre metálico de corneta ─────────────
-    const shaper = ctx.createWaveShaper()
-    const CURVE = 512
-    const curve = new Float32Array(CURVE)
-    for (let i = 0; i < CURVE; i++) {
-      const x = (i / (CURVE - 1)) * 2 - 1
-      curve[i] = Math.tanh(x * 2.0)
-    }
-    shaper.curve = curve
-    shaper.oversample = '4x'
-    shaper.connect(master)
-
-    // ── Filtro passa-banda: corta graves e agudos, realça médio-alto ─
-    const bandpass = ctx.createBiquadFilter()
-    bandpass.type = 'bandpass'
-    bandpass.frequency.setValueAtTime(1200, now)
-    bandpass.Q.setValueAtTime(0.7, now)
-    bandpass.connect(shaper)
-
-    // ── PeriodicWave de brass (harmônicos de corneta/trompete) ──────
-    const real = new Float32Array([0, 1.0, 0.7, 0.5, 0.35, 0.2, 0.12, 0.07, 0.04])
-    const imag = new Float32Array(real.length)
-    const brassWave = ctx.createPeriodicWave(real, imag)
-
-    // ── Toca uma nota com envelope ADSR ────────────────────────────
-    const playNote = (freq, startTime, duration, volume = 1.0) => {
+    function tocarNota(frequencia, inicio, duracao) {
       const osc = ctx.createOscillator()
-      osc.setPeriodicWave(brassWave)
-      osc.frequency.setValueAtTime(freq, startTime)
+      const gain = ctx.createGain()
 
-      // Detune mínimo para humanizar
-      osc.detune.setValueAtTime((Math.random() - 0.5) * 6, startTime)
+      osc.type = 'sawtooth'
+      osc.frequency.setValueAtTime(frequencia, inicio)
 
-      const g = ctx.createGain()
-      const attack  = 0.018
-      const release = 0.06
+      gain.gain.setValueAtTime(0, inicio)
+      gain.gain.linearRampToValueAtTime(0.4, inicio + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.01, inicio + duracao)
 
-      g.gain.setValueAtTime(0.0001, startTime)
-      g.gain.linearRampToValueAtTime(volume, startTime + attack)
-      g.gain.setValueAtTime(volume * 0.88, startTime + attack + 0.01)
-      g.gain.setValueAtTime(volume * 0.88, startTime + duration - release)
-      g.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'lowpass'
+      filter.frequency.value = 3000
 
-      osc.connect(g)
-      g.connect(bandpass)
+      osc.connect(filter)
+      filter.connect(gain)
+      gain.connect(ctx.destination)
 
-      osc.start(startTime)
-      osc.stop(startTime + duration + 0.05)
+      osc.start(inicio)
+      osc.stop(inicio + duracao)
     }
 
-    // ── Sequência "Corneta Atenção" ────────────────────────────────
-    // Notas: Sol4 · Sol4 · Sol4 · Do5 · Mi5 · Sol5 · Do6(longa)
-    // Frequências:  392   392   392   523   659   784   1047
-    const bpm     = 160                     // andamento
-    const beat    = 60 / bpm               // 0.375s por beat
+    const tempoInicial = ctx.currentTime
+    const freq = 440
 
-    playNote(392,  now + 0.00,          beat * 0.45)   // Sol4
-    playNote(392,  now + beat * 0.5,    beat * 0.45)   // Sol4
-    playNote(392,  now + beat * 1.0,    beat * 0.45)   // Sol4
-    playNote(523,  now + beat * 1.5,    beat * 0.45)   // Do5
-    playNote(659,  now + beat * 2.0,    beat * 0.45)   // Mi5
-    playNote(784,  now + beat * 2.5,    beat * 0.45)   // Sol5
-    playNote(1047, now + beat * 3.0,    beat * 2.8)    // Do6 — nota longa final
+    const notas = [
+      { t: 0.0, d: 0.15 },
+      { t: 0.2, d: 0.15 },
+      { t: 0.4, d: 0.15 },
+      { t: 0.6, d: 0.15 },
+      { t: 0.8, d: 0.6 },
+    ]
 
-    setTimeout(() => ctx.close().catch(() => {}), 4000)
+    notas.forEach((nota) => {
+      tocarNota(freq, tempoInicial + nota.t, nota.d)
+    })
+
+    setTimeout(() => ctx.close().catch(() => {}), 2000)
   } catch {
     // silêncio gracioso
   }

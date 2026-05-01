@@ -3,9 +3,7 @@ import { DEFAULT_DASHBOARD_CONFIG, fetchDashboardConfig } from '../lib/dashboard
 import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 import { useCelebration } from '../hooks/useCelebration'
 import { FullscreenButton } from './components/FullscreenButton'
-
-const BASE_CLIENTES = 500
-
+import { LiveClock } from './components/LiveClock'
 
 function toSafeInt(value, fallback = 0) {
   const parsed = Number.parseInt(value, 10)
@@ -14,7 +12,6 @@ function toSafeInt(value, fallback = 0) {
 
 
 // ─── Fundo animado ────────────────────────────────────────────────────────────
-
 
 function AnimatedBackground() {
   const canvasRef = useRef(null)
@@ -107,8 +104,26 @@ function AnimatedBackground() {
 }
 
 
-// ─── Número animado ───────────────────────────────────────────────────────────
+// ─── Flash vermelho ao remover cliente ────────────────────────────────────────
 
+function RedFlashOverlay({ active }) {
+  return (
+    <div
+      className="pointer-events-none fixed inset-0 z-50"
+      style={{
+        background: 'radial-gradient(ellipse at center, rgba(220,38,38,0.6) 0%, rgba(153,27,27,0.4) 40%, rgba(100,0,0,0.2) 70%, transparent 100%)',
+        opacity: active ? 1 : 0,
+        transition: active
+          ? 'opacity 0.05s ease-in'
+          : 'opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
+    />
+  )
+}
+
+
+
+// ─── Número animado ───────────────────────────────────────────────────────────
 
 function AnimatedClientsCount({ value }) {
   const [displayValue, setDisplayValue] = useState(value)
@@ -140,7 +155,6 @@ function AnimatedClientsCount({ value }) {
 
 
 // ─── Card de meta ─────────────────────────────────────────────────────────────
-
 
 function GoalCard({ title, novos, meta, progress, gradient, glowColor }) {
   const circumference = 2 * Math.PI * 54
@@ -215,14 +229,58 @@ function GoalCard({ title, novos, meta, progress, gradient, glowColor }) {
 }
 
 
-// ─── Página principal ─────────────────────────────────────────────────────────
+// ─── Card clientes no ano ─────────────────────────────────────────────────────
 
+function ClientesAnoCard({ ano, valor, glowColor }) {
+  return (
+    <article
+      className="relative overflow-hidden rounded-3xl p-6 md:p-7"
+      style={{
+        background: 'rgba(3, 20, 10, 0.75)',
+        backdropFilter: 'blur(18px)',
+        border: '1px solid rgba(74,222,128,0.18)',
+        boxShadow: `0 0 40px ${glowColor}22, inset 0 1px 0 rgba(255,255,255,0.05)`,
+      }}
+    >
+      <div
+        className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full opacity-25 blur-3xl"
+        style={{ background: glowColor }}
+      />
+
+      <div className="flex h-full flex-col items-center justify-center gap-3 py-2 text-center">
+        <p className="text-sm font-semibold uppercase tracking-widest text-green-400/70">
+          Clientes em {ano}
+        </p>
+
+        <p
+          className="font-black leading-none tabular-nums"
+          style={{
+            fontSize: 'clamp(48px, 5vw, 72px)',
+            color: '#ffffff',
+            textShadow: `0 0 40px ${glowColor}99, 0 0 80px ${glowColor}44`,
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {valor}
+        </p>
+
+        <p className="text-sm font-medium text-white/40">novos clientes</p>
+      </div>
+    </article>
+  )
+}
+
+
+// ─── Página principal ─────────────────────────────────────────────────────────
 
 export function TvDashboardPage() {
   const [config, setConfig] = useState(DEFAULT_DASHBOARD_CONFIG)
   const [loadError, setLoadError] = useState('')
   const prevTotalRef = useRef(null)
   const { triggerCelebration, CelebrationCanvas } = useCelebration()
+
+  const [redFlash, setRedFlash] = useState(false)
+  const redFlashTimerRef = useRef(null)
 
   useEffect(() => {
     if (!supabase) {
@@ -256,36 +314,39 @@ export function TvDashboardPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'configuracoes_dashboard' }, refreshConfig)
       .subscribe()
 
-    const intervalId = setInterval(refreshConfig, 5000)
-
     return () => {
       isActive = false
-      clearInterval(intervalId)
       supabase.removeChannel(realtimeChannel)
     }
   }, [])
 
   // ── Derivações ──────────────────────────────────────────────────────────────
 
-  const totalClientes  = Math.max(0, toSafeInt(config.contagem_atual, BASE_CLIENTES))
-  const metaMensal     = Math.max(0, toSafeInt(config.meta_mensal, 0))
-  const metaAnual      = Math.max(0, toSafeInt(config.meta_anual,  0))
+  const totalClientes = Math.max(0, toSafeInt(config.contagem_atual, 0))
+  const clientesMes   = Math.max(0, toSafeInt(config.clientes_mes,   0))
+  const clientesAno   = Math.max(0, toSafeInt(config.clientes_ano,   0))
+  const metaMensal    = Math.max(0, toSafeInt(config.meta_mensal,    0))
+  const metaAnual     = Math.max(0, toSafeInt(config.meta_anual,     0))
 
-  // Meta mensal: usa o campo dedicado clientes_mes informado pelo admin.
-  // Fallback para novosClientes (total - base) caso o campo ainda não exista.
-  const novosClientes  = Math.max(0, totalClientes - BASE_CLIENTES)
-  const clientesMes    = toSafeInt(config.clientes_mes, -1)
-  const novosMensal    = clientesMes >= 0 ? clientesMes : novosClientes
+  const progressoMensal = metaMensal > 0 ? Math.min(100, Math.round((clientesMes / metaMensal) * 100)) : 0
+  const progressoAnual  = metaAnual  > 0 ? Math.min(100, Math.round((clientesAno / metaAnual)  * 100)) : 0
 
-  // Meta anual: continua usando o acumulado total (novosClientes)
-  const progressoMensal = metaMensal > 0 ? Math.min(100, Math.round((novosMensal  / metaMensal) * 100)) : 0
-  const progressoAnual  = metaAnual  > 0 ? Math.min(100, Math.round((novosClientes / metaAnual)  * 100)) : 0
+  // ── Detecta adição ou remoção de cliente ────────────────────────────────────
 
-  // Celebração ao aumentar total
   useEffect(() => {
-    if (prevTotalRef.current !== null && totalClientes > prevTotalRef.current) {
-      triggerCelebration()
+    if (prevTotalRef.current === null) {
+      prevTotalRef.current = totalClientes
+      return
     }
+
+    if (totalClientes > prevTotalRef.current) {
+      triggerCelebration()
+    } else if (totalClientes < prevTotalRef.current) {
+      clearTimeout(redFlashTimerRef.current)
+      setRedFlash(true)
+      redFlashTimerRef.current = setTimeout(() => setRedFlash(false), 80)
+    }
+
     prevTotalRef.current = totalClientes
   }, [totalClientes, triggerCelebration])
 
@@ -296,6 +357,7 @@ export function TvDashboardPage() {
     <>
       <AnimatedBackground />
       <CelebrationCanvas />
+      <RedFlashOverlay active={redFlash} />
       <FullscreenButton position="top-right" hideAfter={4000} />
 
       <main
@@ -303,50 +365,70 @@ export function TvDashboardPage() {
         style={{ fontFamily: config.familia_fonte || "'DM Sans', system-ui, sans-serif" }}
       >
         {/* Header */}
-        <header className="px-8 pt-8 md:px-14 md:pt-10">
-          {config.url_logo ? (
-            <img
-              src={config.url_logo}
-              alt="Logo"
-              className="mx-auto max-h-16 w-auto object-contain md:max-h-20"
-            />
-          ) : (
-            <p
+        <header className="flex items-center justify-between gap-4 px-8 pt-8 md:px-14 md:pt-10">
+          <div className="w-32 md:w-48" />
+
+          <p
               className="text-center text-lg font-black uppercase tracking-[0.4em] md:text-2xl"
               style={{ color: '#4ade80', textShadow: '0 0 20px rgba(74,222,128,0.5)' }}
             >
               Teks Software
             </p>
-          )}
+
+          {/* Espaço espelhado para centralizar o título */}
+          <div className="w-32 md:w-48" />
         </header>
 
         {/* Contador central */}
-        <section className="flex flex-1 flex-col items-center justify-center px-4">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-green-400/60">
-            total de clientes
-          </p>
-          <h1
-            className="text-center font-black leading-none"
-            style={{
-              fontSize: 'clamp(80px, 16vw, 190px)',
-              color: '#ffffff',
-              textShadow: '0 0 60px rgba(74,222,128,0.35), 0 0 120px rgba(34,197,94,0.2)',
-              letterSpacing: '-0.03em',
-            }}
-          >
-            <AnimatedClientsCount value={totalClientes} />
-          </h1>
-          <div
-            className="mt-3 h-px w-32"
-            style={{ background: 'linear-gradient(90deg, transparent, #4ade80, transparent)' }}
-          />
+        <section className="flex flex-1 flex-col items-center justify-between px-4 py-6">
+
+          {/* Logo central — próxima ao título */}
+          {config.url_logo && (
+            <img
+              src={config.url_logo}
+              alt="Logo"
+              className="w-auto object-contain"
+              style={{
+                height: 'clamp(120px, 16vw, 220px)',
+                maxWidth: '75%',
+              }}
+            />
+          )}
+
+          {/* Total de clientes */}
+          <div className="flex flex-col items-center">
+            <p className="mb-1 text-sm font-semibold uppercase tracking-[0.3em] text-green-400/60">
+              total de clientes
+            </p>
+            <h1
+              className="text-center font-black leading-none"
+              style={{
+                fontSize: 'clamp(136px, 27vw, 323px)',
+                color: '#ffffff',
+                textShadow: '0 0 60px rgba(74,222,128,0.35), 0 0 120px rgba(34,197,94,0.2)',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              <AnimatedClientsCount value={totalClientes} />
+            </h1>
+          </div>
+
+          {/* Relógio — na base da seção */}
+          <div className="flex flex-col items-center">
+            <div
+              className="mb-3 h-px w-32"
+              style={{ background: 'linear-gradient(90deg, transparent, #4ade80, transparent)' }}
+            />
+            <LiveClock />
+          </div>
+
         </section>
 
         {/* Cards de meta */}
-        <div className="grid gap-5 px-6 pb-8 md:grid-cols-2 md:gap-6 md:px-14 md:pb-10">
+        <div className="grid gap-5 px-6 pb-8 md:grid-cols-3 md:gap-6 md:px-14 md:pb-10">
           <GoalCard
             title={`Meta Mensal — ${mesAtual}`}
-            novos={novosMensal}
+            novos={clientesMes}
             meta={metaMensal}
             progress={progressoMensal}
             gradient={['#4ade80', '#22c55e']}
@@ -354,11 +436,16 @@ export function TvDashboardPage() {
           />
           <GoalCard
             title={`Meta Anual — ${anoAtual}`}
-            novos={novosClientes}
+            novos={clientesAno}
             meta={metaAnual}
             progress={progressoAnual}
             gradient={['#34d399', '#059669']}
             glowColor="#10b981"
+          />
+          <ClientesAnoCard
+            ano={anoAtual}
+            valor={clientesAno}
+            glowColor="#3b82f6"
           />
         </div>
 
@@ -366,9 +453,7 @@ export function TvDashboardPage() {
           <div className="px-6 pb-6 text-center text-xs text-green-400/50 md:px-14">{loadError}</div>
         )}
 
-        <div className="px-6 pb-3 text-center text-[10px] text-white/20 md:px-14">
-          total={totalClientes} | mês={novosMensal} | mensal={metaMensal} | anual={metaAnual}
-        </div>
+
       </main>
     </>
   )
