@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { DEFAULT_DASHBOARD_CONFIG, fetchDashboardConfig } from '../lib/dashboardConfig'
 import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 import { useCelebration } from '../hooks/useCelebration'
+import { useSomCliente } from '../hooks/useSomCliente'
 import { FullscreenButton } from './components/FullscreenButton'
 import { LiveClock } from './components/LiveClock'
 
@@ -279,6 +280,12 @@ export function TvDashboardPage() {
   const prevTotalRef = useRef(null)
   const { triggerCelebration, CelebrationCanvas } = useCelebration()
 
+  const { playSom } = useSomCliente({
+    urlSom:    config.url_som_cliente ?? '',
+    volume:    0.8,
+    habilitado: true,
+  })
+
   const [redFlash, setRedFlash] = useState(false)
   const redFlashTimerRef = useRef(null)
 
@@ -341,6 +348,7 @@ export function TvDashboardPage() {
 
     if (totalClientes > prevTotalRef.current) {
       triggerCelebration()
+      playSom()
     } else if (totalClientes < prevTotalRef.current) {
       clearTimeout(redFlashTimerRef.current)
       setRedFlash(true)
@@ -348,7 +356,7 @@ export function TvDashboardPage() {
     }
 
     prevTotalRef.current = totalClientes
-  }, [totalClientes, triggerCelebration])
+  }, [totalClientes, triggerCelebration, playSom])
 
   const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long' })
   const anoAtual = new Date().getFullYear()
