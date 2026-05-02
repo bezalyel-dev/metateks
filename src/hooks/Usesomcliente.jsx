@@ -1,13 +1,32 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-/**
- * Gerencia o som tocado ao adicionar um novo cliente.
- * A URL é salva no Supabase junto com o restante da config (campo url_som_cliente).
- * A reprodução usa Web Audio API com fetch da URL.
- */
 export function useSomCliente({ urlSom, volume = 0.8, habilitado = true }) {
   const bufferRef    = useRef(null)
-  const carregadoRef = useRef('')   // URL que está em cache no buffer
+  const carregadoRef = useRef('')
+  const ctxRef       = useRef(null)  // AudioContext persistente
+
+  // ── Cria/desbloqueia o AudioContext no primeiro gesto do usuário ──────────
+  useEffect(() => {
+    const desbloquear = () => {
+      if (ctxRef.current) {
+        if (ctxRef.current.state === 'suspended') ctxRef.current.resume()
+        return
+      }
+      const C = window.AudioContext || window.webkitAudioContext
+      if (!C) return
+      ctxRef.current = new C()
+    }
+
+    window.addEventListener('click',     desbloquear, { once: false })
+    window.addEventListener('touchstart', desbloquear, { once: false })
+    window.addEventListener('keydown',    desbloquear, { once: false })
+
+    return () => {
+      window.removeEventListener('click',     desbloquear)
+      window.removeEventListener('touchstart', desbloquear)
+      window.removeEventListener('keydown',    desbloquear)
+    }
+  }, [])
 
   // ── Pré-carrega o buffer sempre que a URL mudar ───────────────────────────
   useEffect(() => {
@@ -18,13 +37,14 @@ export function useSomCliente({ urlSom, volume = 0.8, habilitado = true }) {
 
     const carregar = async () => {
       try {
-        const C   = window.AudioContext || window.webkitAudioContext
+        const C = window.AudioContext || window.webkitAudioContext
         if (!C) return
-        const ctx = new C()
+        // Usa contexto temporário só para decodificar
+        const tmpCtx = new C()
         const res = await fetch(urlSom)
         const ab  = await res.arrayBuffer()
-        bufferRef.current = await ctx.decodeAudioData(ab)
-        await ctx.close()
+        bufferRef.current = await tmpCtx.decodeAudioData(ab)
+        await tmpCtx.close()
       } catch {
         bufferRef.current = null
       }
@@ -37,8 +57,10 @@ export function useSomCliente({ urlSom, volume = 0.8, habilitado = true }) {
   const playSom = useCallback(() => {
     if (!habilitado || !bufferRef.current) return
     try {
-      const C   = window.AudioContext || window.webkitAudioContext
-      const ctx = new C()
+      const C = window.AudioContext || window.webkitAudioContext
+      const ctx = ctxRef.current ?? new C()
+      ctxRef.current = ctx
+
       if (ctx.state === 'suspended') ctx.resume()
 
       const gain = ctx.createGain()
@@ -49,7 +71,6 @@ export function useSomCliente({ urlSom, volume = 0.8, habilitado = true }) {
       source.connect(gain)
       gain.connect(ctx.destination)
       source.start(0)
-      source.onended = () => ctx.close().catch(() => {})
     } catch {
       // silêncio gracioso
     }
