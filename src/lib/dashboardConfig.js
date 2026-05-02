@@ -1,5 +1,4 @@
 // ─── Defaults ────────────────────────────────────────────────────────────────
-
 export const DEFAULT_DASHBOARD_CONFIG = {
   contagem_atual: 0,   // total acumulado de clientes (editável)
   clientes_mes:   0,   // clientes que entraram no mês corrente
@@ -11,6 +10,7 @@ export const DEFAULT_DASHBOARD_CONFIG = {
   familia_fonte:  'Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
   url_logo:         '',
   url_logo_login:   '',
+  url_som_cliente:  '',  // URL direta de um arquivo MP3/WAV/OGG
   // Referências para detectar virada de mês/ano
   mes_referencia: '',  // formato 'YYYY-MM'
   ano_referencia: '',  // formato 'YYYY'
@@ -42,8 +42,9 @@ function normalizeConfig(row) {
     cor_fundo:      row.cor_fundo      ?? DEFAULT_DASHBOARD_CONFIG.cor_fundo,
     cor_texto:      row.cor_texto      ?? DEFAULT_DASHBOARD_CONFIG.cor_texto,
     familia_fonte:  row.familia_fonte  ?? DEFAULT_DASHBOARD_CONFIG.familia_fonte,
-    url_logo:         row.url_logo          ?? DEFAULT_DASHBOARD_CONFIG.url_logo,
-    url_logo_login:   row.url_logo_login    ?? DEFAULT_DASHBOARD_CONFIG.url_logo_login,
+    url_logo:         row.url_logo         ?? DEFAULT_DASHBOARD_CONFIG.url_logo,
+    url_logo_login:   row.url_logo_login   ?? DEFAULT_DASHBOARD_CONFIG.url_logo_login,
+    url_som_cliente:  row.url_som_cliente  ?? DEFAULT_DASHBOARD_CONFIG.url_som_cliente,  // ← linha nova
     mes_referencia: row.mes_referencia ?? DEFAULT_DASHBOARD_CONFIG.mes_referencia,
     ano_referencia: row.ano_referencia ?? DEFAULT_DASHBOARD_CONFIG.ano_referencia,
     updated_at:     row.updated_at     ?? null,

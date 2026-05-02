@@ -9,6 +9,7 @@ import {
   updateDashboardConfig,
 } from '../lib/dashboardConfig'
 import { supabase, supabaseEnvError } from '../lib/supabaseClient'
+import { useSomCliente } from '../hooks/Usesomcliente'
 
 
 const FONT_OPTIONS = [
@@ -70,6 +71,11 @@ export function AdminPanelPage() {
   const [feedback, setFeedback] = useState('')
   const [error, setError] = useState('')
 
+  const { playSom } = useSomCliente({
+    urlSom:    config.url_som_cliente ?? '',
+    volume:    0.8,
+    habilitado: true,
+  })
 
   // ── Carga inicial + auto-reset ────────────────────────────────────────────
 
@@ -202,6 +208,8 @@ export function AdminPanelPage() {
       familia_fonte:   config.familia_fonte,
       url_logo:        config.url_logo.trim(),
       url_logo_login:  (config.url_logo_login ?? '').trim(),
+      url_som_cliente:  (config.url_som_cliente ?? '').trim(),  // ← novo
+
     })
   }
 
@@ -214,7 +222,10 @@ export function AdminPanelPage() {
       contagem_atual: clamp(prev.contagem_atual + delta),
       clientes_mes:   clamp(prev.clientes_mes   + delta),
       clientes_ano:   clamp(prev.clientes_ano   + delta),
+
     })
+    if (delta > 0) playSom()  // ← linha nova
+
   }
 
 
@@ -402,6 +413,47 @@ export function AdminPanelPage() {
 
             </SectionCard>
           </form>
+
+          
+              <form style={{ marginTop: '1.5rem' }} onSubmit={handleSaveVisual}>
+          <SectionCard title="Som de Novo Cliente" icon="🔊">
+            <Field
+              label="URL do som"
+              hint='Cole a URL direta de um arquivo MP3/WAV/OGG. Ex: Dropbox, GitHub raw, Freesound. Mesmo processo da logo.'
+            >
+              <input
+                type="url"
+                placeholder="https://exemplo.com/som-cliente.mp3"
+                value={config.url_som_cliente ?? ''}
+                onChange={(e) => updateField('url_som_cliente', e.target.value)}
+                className="admin-input admin-input--mono"
+              />
+            </Field>
+
+            {config.url_som_cliente && (
+              <div style={{ marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={playSom}
+                  className="btn btn--ghost"
+                  style={{ fontSize: '0.82rem' }}
+                >
+                  ▶ Testar som
+                </button>
+              </div>
+            )}
+
+            <div className="admin-actions">
+              <span />
+              <button type="submit" disabled={saving} className="btn btn--primary">
+                {saving ? <><span className="btn__spinner" /> Salvando...</> : <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Salvar som
+                </>}
+              </button>
+            </div>
+          </SectionCard>
+        </form>
 
 
           {/* ── Seção visual ──────────────────────────────────────────────── */}

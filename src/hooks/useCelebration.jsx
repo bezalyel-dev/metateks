@@ -16,55 +16,6 @@ import { useCallback, useEffect, useRef } from 'react'
 
 // ─── Síntese de som ──────────────────────────────────────────────────────────
 
-function playFireworkSound() {
-  try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext
-    const ctx = new AudioCtx()
-    if (ctx.state === 'suspended') ctx.resume()
-
-    function tocarNota(frequencia, inicio, duracao) {
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-
-      osc.type = 'sawtooth'
-      osc.frequency.setValueAtTime(frequencia, inicio)
-
-      gain.gain.setValueAtTime(0, inicio)
-      gain.gain.linearRampToValueAtTime(0.4, inicio + 0.02)
-      gain.gain.exponentialRampToValueAtTime(0.01, inicio + duracao)
-
-      const filter = ctx.createBiquadFilter()
-      filter.type = 'lowpass'
-      filter.frequency.value = 3000
-
-      osc.connect(filter)
-      filter.connect(gain)
-      gain.connect(ctx.destination)
-
-      osc.start(inicio)
-      osc.stop(inicio + duracao)
-    }
-
-    const tempoInicial = ctx.currentTime
-    const freq = 440
-
-    const notas = [
-      { t: 0.0, d: 0.15 },
-      { t: 0.2, d: 0.15 },
-      { t: 0.4, d: 0.15 },
-      { t: 0.6, d: 0.15 },
-      { t: 0.8, d: 0.6 },
-    ]
-
-    notas.forEach((nota) => {
-      tocarNota(freq, tempoInicial + nota.t, nota.d)
-    })
-
-    setTimeout(() => ctx.close().catch(() => {}), 2000)
-  } catch {
-    // silêncio gracioso
-  }
-}
 
 // ─── Partículas ──────────────────────────────────────────────────────────────
 
@@ -164,7 +115,6 @@ export function useCelebration() {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    playFireworkSound()
 
     // Dispara 3 explosões em posições aleatórias
     const bursts = 3
