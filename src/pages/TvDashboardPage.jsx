@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { DEFAULT_DASHBOARD_CONFIG, fetchDashboardConfig } from '../lib/dashboardConfig'
 import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 import { useCelebration } from '../hooks/useCelebration'
-import { useSomCliente } from '../hooks/useSomCliente'
+import { useSomCliente } from '../hooks/Usesomcliente'
 import { FullscreenButton } from './components/FullscreenButton'
 import { LiveClock } from './components/LiveClock'
 
@@ -285,6 +285,9 @@ export function TvDashboardPage() {
     volume:    0.8,
     habilitado: true,
   })
+
+  console.log('url_som_cliente:', config.url_som_cliente)
+
 
   const [redFlash, setRedFlash] = useState(false)
   const redFlashTimerRef = useRef(null)
