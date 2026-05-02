@@ -383,7 +383,6 @@ export function TvDashboardPage() {
           fontFamily: config.familia_fonte || "'DM Sans', system-ui, sans-serif",
           minHeight: '100dvh',
           width: '100%',
-          backgroundColor: '#030f07',
         }}
       >
         {/* Header */}
