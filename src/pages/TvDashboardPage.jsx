@@ -286,9 +286,6 @@ export function TvDashboardPage() {
     habilitado: true,
   })
 
-  console.log('url_som_cliente:', config.url_som_cliente)
-
-
   const [redFlash, setRedFlash] = useState(false)
   const redFlashTimerRef = useRef(null)
 
@@ -366,14 +363,28 @@ export function TvDashboardPage() {
 
   return (
     <>
+      <style>{`
+        html, body, #root {
+          background: #030f07 !important;
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          min-height: 100%;
+        }
+      `}</style>
       <AnimatedBackground />
       <CelebrationCanvas />
       <RedFlashOverlay active={redFlash} />
       <FullscreenButton position="top-right" hideAfter={4000} />
 
       <main
-        className="relative z-10 flex min-h-screen flex-col overflow-hidden"
-        style={{ fontFamily: config.familia_fonte || "'DM Sans', system-ui, sans-serif" }}
+        className="relative z-10 flex flex-col"
+        style={{
+          fontFamily: config.familia_fonte || "'DM Sans', system-ui, sans-serif",
+          minHeight: '100dvh',
+          width: '100%',
+          backgroundColor: '#030f07',
+        }}
       >
         {/* Header */}
         <header className="flex items-center justify-between gap-4 px-8 pt-8 md:px-14 md:pt-10">
@@ -391,7 +402,7 @@ export function TvDashboardPage() {
         </header>
 
         {/* Contador central */}
-        <section className="flex flex-1 flex-col items-center justify-between px-4 py-6">
+        <section className="flex flex-1 flex-col items-center justify-between px-4 py-4 md:py-6" style={{ minHeight: 0 }}>
 
           {/* Logo central — próxima ao título */}
           {config.url_logo && (
@@ -414,7 +425,7 @@ export function TvDashboardPage() {
             <h1
               className="text-center font-black leading-none"
               style={{
-                fontSize: 'clamp(136px, 27vw, 323px)',
+                fontSize: 'clamp(80px, 22vw, 300px)',
                 color: '#ffffff',
                 textShadow: '0 0 60px rgba(74,222,128,0.35), 0 0 120px rgba(34,197,94,0.2)',
                 letterSpacing: '-0.03em',
@@ -436,7 +447,7 @@ export function TvDashboardPage() {
         </section>
 
         {/* Cards de meta */}
-        <div className="grid gap-5 px-6 pb-8 md:grid-cols-3 md:gap-6 md:px-14 md:pb-10">
+        <div className="grid gap-4 px-4 pb-6 md:grid-cols-3 md:gap-5 md:px-10 md:pb-8 lg:px-14 lg:pb-10">
           <GoalCard
             title={`Meta Mensal — ${mesAtual}`}
             novos={clientesMes}
