@@ -23,11 +23,21 @@ function AnimatedBackground() {
     const ctx = canvas.getContext('2d')
 
     const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      // Usa o tamanho real do viewport independente de zoom
+      const w = document.documentElement.clientWidth  || window.innerWidth
+      const h = document.documentElement.clientHeight || window.innerHeight
+      canvas.width  = w
+      canvas.height = h
+      // Garante que o elemento CSS também cobre tudo
+      canvas.style.width  = w + 'px'
+      canvas.style.height = h + 'px'
     }
     resize()
     window.addEventListener('resize', resize)
+    // Detecta mudança de zoom via visualViewport quando disponível
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', resize)
+    }
 
     const particles = Array.from({ length: 55 }, () => ({
       x: Math.random() * canvas.width,
@@ -39,9 +49,11 @@ function AnimatedBackground() {
     }))
 
     const orbs = [
-      { x: 0.15, y: 0.3,  r: 320, color: 'rgba(34,197,94,0.13)',  phase: 0,   speed: 0.0007 },
-      { x: 0.8,  y: 0.65, r: 280, color: 'rgba(16,185,129,0.10)', phase: 1.5, speed: 0.0009 },
-      { x: 0.5,  y: 0.15, r: 200, color: 'rgba(74,222,128,0.08)', phase: 3,   speed: 0.0006 },
+      { x: 0.15, y: 0.3,  r: 0.55, color: 'rgba(34,197,94,0.13)',  phase: 0,   speed: 0.0007 },
+      { x: 0.8,  y: 0.65, r: 0.50, color: 'rgba(16,185,129,0.10)', phase: 1.5, speed: 0.0009 },
+      { x: 0.5,  y: 0.15, r: 0.40, color: 'rgba(74,222,128,0.08)', phase: 3,   speed: 0.0006 },
+      { x: 0.85, y: 0.2,  r: 0.35, color: 'rgba(34,197,94,0.07)',  phase: 2,   speed: 0.0005 },
+      { x: 0.2,  y: 0.8,  r: 0.38, color: 'rgba(16,185,129,0.07)', phase: 4,   speed: 0.0008 },
     ]
 
     let raf, t = 0
@@ -58,9 +70,10 @@ function AnimatedBackground() {
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       for (const orb of orbs) {
-        const cx = orb.x * canvas.width  + Math.sin(t * orb.speed + orb.phase) * 80
-        const cy = orb.y * canvas.height + Math.cos(t * orb.speed * 1.3 + orb.phase) * 50
-        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, orb.r)
+        const cx = orb.x * canvas.width  + Math.sin(t * orb.speed + orb.phase) * canvas.width * 0.06
+        const cy = orb.y * canvas.height + Math.cos(t * orb.speed * 1.3 + orb.phase) * canvas.height * 0.06
+        const r  = orb.r * Math.max(canvas.width, canvas.height)
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r)
         grad.addColorStop(0, orb.color)
         grad.addColorStop(1, 'transparent')
         ctx.fillStyle = grad
@@ -92,14 +105,20 @@ function AnimatedBackground() {
     }
 
     draw()
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize) }
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', resize)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', resize)
+      }
+    }
   }, [])
 
   return (
     <canvas
       ref={canvasRef}
       className="pointer-events-none fixed inset-0 z-0"
-      style={{ width: '100vw', height: '100vh' }}
+      style={{ width: '100vw', height: '100vh', display: 'block' }}
     />
   )
 }
