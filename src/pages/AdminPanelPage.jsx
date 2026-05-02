@@ -424,18 +424,6 @@ export function AdminPanelPage() {
               />
             </Field>
 
-            {config.url_som_cliente && (
-              <div style={{ marginTop: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={playSom}
-                  className="btn btn--ghost"
-                  style={{ fontSize: '0.82rem' }}
-                >
-                  ▶ Testar som
-                </button>
-              </div>
-            )}
 
             <div className="admin-actions">
               <span />
