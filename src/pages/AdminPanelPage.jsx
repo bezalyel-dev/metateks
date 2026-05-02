@@ -9,7 +9,6 @@ import {
   updateDashboardConfig,
 } from '../lib/dashboardConfig'
 import { supabase, supabaseEnvError } from '../lib/supabaseClient'
-import { useSomCliente } from '../hooks/Usesomcliente'
 
 
 const FONT_OPTIONS = [
@@ -71,11 +70,7 @@ export function AdminPanelPage() {
   const [feedback, setFeedback] = useState('')
   const [error, setError] = useState('')
 
-  const { playSom } = useSomCliente({
-    urlSom:    config.url_som_cliente ?? '',
-    volume:    0.8,
-    habilitado: true,
-  })
+
 
   // ── Carga inicial + auto-reset ────────────────────────────────────────────
 
@@ -224,7 +219,6 @@ export function AdminPanelPage() {
       clientes_ano:   clamp(prev.clientes_ano   + delta),
 
     })
-    if (delta > 0) playSom()  // ← linha nova
 
   }
 
