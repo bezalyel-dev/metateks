@@ -1,5 +1,7 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '../components/auth/ProtectedRoute'
+import { TerminalGuard } from '../components/auth/TerminalGuard'
+import { AccessDeniedPage } from '../pages/AccessDeniedPage'
 import { AdminLoginPage } from '../pages/AdminLoginPage'
 import { AdminPanelPage } from '../pages/AdminPanelPage'
 import { TvDashboardPage } from '../pages/TvDashboardPage'
@@ -10,7 +12,15 @@ export function AppRouter() {
     <Routes>
       <Route path="/" element={<WormholeEntry />} />
       <Route path="/tv" element={<TvDashboardPage />} />
-      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/access-denied" element={<AccessDeniedPage />} />
+      <Route
+        path="/admin/login"
+        element={
+          <TerminalGuard>
+            <AdminLoginPage />
+          </TerminalGuard>
+        }
+      />
       <Route
         path="/admin"
         element={

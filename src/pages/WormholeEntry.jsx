@@ -91,89 +91,142 @@ const BOOT_LINES = [
   '',
 ]
 
+// ─── Linhas de autenticação admin ────────────────────────────────────────────
+const LOGIN_LINES = [
+  '[sudo] password for teks: ********',
+  '',
+  'Checking sudo privileges ... granted',
+  'Initializing teks-auth module v3.2.1 ...',
+  'Loading security policy from /etc/teks/auth.conf ...',
+  'Parsing ACL rules ... 142 entries loaded',
+  '',
+  '[  OK  ] Loaded PAM authentication stack.',
+  '[  OK  ] Loaded session security policy.',
+  '[  OK  ] Verified SSL certificate chain (Let\'s Encrypt R3).',
+  '[  OK  ] Entropy pool seeded: /dev/urandom ready.',
+  '[  OK  ] Firewall rules verified: 0 anomalies detected.',
+  '[  OK  ] Loaded seccomp filter profile: admin-strict.',
+  '',
+  'Connecting to auth.teks.io:443 ... connected',
+  'Negotiating TLS 1.3 handshake ... done',
+  'Cipher suite: TLS_AES_256_GCM_SHA384',
+  'Server certificate fingerprint: 4A:F2:C1:9E:83:BB:07:2D:...',
+  'Certificate valid until: 2026-11-14T00:00:00Z',
+  '',
+  'Requesting admin session token ...',
+  'Generating PKCE challenge: S256',
+  'code_verifier: f3b2a1e9c7d4...(truncated)',
+  'POST /oauth/token HTTP/1.1 → 200 OK',
+  '[  OK  ] Token issued. Expires in: 3600s',
+  '[  OK  ] Refresh token stored in secure enclave.',
+  '',
+  'Validating RBAC permissions ...',
+  'GET /api/v2/admin/permissions → 200 OK',
+  '[  OK  ] Fetching user permissions from teks-api.',
+  '[  OK  ] Role: ADMINISTRATOR — access level: FULL',
+  '[  OK  ] Scope: users:read users:write orgs:admin reports:export',
+  '[  OK  ] IP whitelist check: 189.x.x.x — ALLOWED',
+  '[  OK  ] Device fingerprint: verified',
+  '[  OK  ] Audit log initialized. Log ID: 0xF3A2C1B9',
+  '[  OK  ] 2FA bypass: hardware key detected (FIDO2/WebAuthn).',
+  '',
+  'Loading admin panel assets ...',
+  'GET /admin/bundle.js → 200 OK (482 KB)',
+  'GET /admin/styles.css → 200 OK (38 KB)',
+  'GET /api/v2/admin/stats → 200 OK',
+  'GET /api/v2/admin/users?limit=50 → 200 OK',
+  'GET /api/v2/admin/orgs → 200 OK',
+  'GET /api/v2/admin/audit-log?last=100 → 200 OK',
+  '',
+  'Hydrating admin state ...',
+  'Users loaded: 1,204',
+  'Organizations loaded: 87',
+  'Pending approvals: 3',
+  'Active sessions: 142',
+  'Alerts: 0 critical, 2 warnings',
+  '',
+  'Initializing WebSocket admin channel ...',
+  'ws://teks.io/admin/live → CONNECTED',
+  '[  OK  ] Real-time event stream active.',
+  '[  OK  ] Admin heartbeat: 200ms',
+  '',
+  '[ teks-auth ] Authentication successful.',
+  '[ teks-auth ] Session ID: a7f3c2e1-9b4d-4f2a-8c1e-d5b6f9a0e3c2',
+  '[ teks-auth ] Logged at: ' + new Date().toISOString(),
+  '',
+  'Redirecting to admin login interface...',
+  '',
+  '█████╗ ██████╗ ███╗   ███╗██╗███╗   ██╗',
+  '██╔══██╗██╔══██╗████╗ ████║██║████╗  ██║',
+  '███████║██║  ██║██╔████╔██║██║██╔██╗ ██║',
+  '██╔══██║██║  ██║██║╚██╔╝██║██║██║╚██╗██║',
+  '██║  ██║██████╔╝██║ ╚═╝ ██║██║██║ ╚████║',
+  '╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝',
+  '',
+]
+
 // ─── Velocidade de scroll: chars por frame ────────────────────────────────────
-const CHARS_PER_TICK = 4   // velocidade de digitação por tick
-const TICK_MS        = 8   // intervalo em ms (≈120 fps de texto)
-const BOOT_DURATION  = 4000 // ms até redirecionar após último char
+const CHARS_PER_TICK = 4
+const TICK_MS        = 8
+const BOOT_DURATION  = 2500
 
 export function WormholeEntry() {
   const navigate = useNavigate()
 
-  // Estado da fase: 'idle' | 'typing' | 'booting' | 'done'
   const [phase,       setPhase]       = useState('idle')
   const [inputValue,  setInputValue]  = useState('')
   const [inputError,  setInputError]  = useState(false)
   const [lines,       setLines]       = useState([])
   const [cursor,      setCursor]      = useState(true)
+  const [destination, setDestination] = useState('/tv')
 
-  const inputRef    = useRef(null)
-  const outputRef   = useRef(null)
-  const tickRef     = useRef(null)
-  const charIdxRef  = useRef(0)  // índice global de char no texto completo
-  const fullText    = useRef('')  // todo o texto concatenado
-  const lineMapRef  = useRef([])  // mapa de onde cada linha começa
+  const inputRef   = useRef(null)
+  const outputRef  = useRef(null)
+  const tickRef    = useRef(null)
+  const charIdxRef = useRef(0)
+  const fullText   = useRef('')
 
-  // Cursor piscante
   useEffect(() => {
     const t = setInterval(() => setCursor(c => !c), 530)
     return () => clearInterval(t)
   }, [])
 
-  // Foco no input ao montar
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
 
-  // Scroll automático
   useEffect(() => {
     if (outputRef.current) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight
     }
   }, [lines])
 
-  // Prepara o texto completo e o mapa de linhas
-  const prepareText = () => {
-    let pos = 0
-    const map = []
-    const full = BOOT_LINES.map(line => {
-      map.push(pos)
-      pos += line.length + 1 // +1 pelo \n
-      return line
-    }).join('\n')
-    fullText.current  = full
-    lineMapRef.current = map
-    return full
-  }
-
-  // Inicia o boot
-  const startBoot = () => {
+  const runSequence = (sourceLines, dest) => {
     setPhase('booting')
-    const full = prepareText()
+    setDestination(dest)
+    const full = sourceLines.join('\n')
+    fullText.current  = full
     charIdxRef.current = 0
     setLines([])
 
     const tick = () => {
-      charIdxRef.current = Math.min(
-        charIdxRef.current + CHARS_PER_TICK,
-        full.length
-      )
-      const partial = full.slice(0, charIdxRef.current)
-      setLines(partial.split('\n'))
+      charIdxRef.current = Math.min(charIdxRef.current + CHARS_PER_TICK, full.length)
+      setLines(full.slice(0, charIdxRef.current).split('\n'))
 
       if (charIdxRef.current < full.length) {
         tickRef.current = setTimeout(tick, TICK_MS)
       } else {
-        // Terminou de escrever, aguarda e redireciona
         setPhase('done')
-        setTimeout(() => navigate('/tv'), BOOT_DURATION)
+        if (dest === '/admin/login') {
+          sessionStorage.setItem('teks_terminal_auth', 'true')
+        }
+        setTimeout(() => navigate(dest), BOOT_DURATION)
       }
     }
     tickRef.current = setTimeout(tick, TICK_MS)
   }
 
-  useEffect(() => {
-    return () => clearTimeout(tickRef.current)
-  }, [])
+  useEffect(() => () => clearTimeout(tickRef.current), [])
 
   const handleInput = (e) => {
     if (phase !== 'idle') return
@@ -184,8 +237,10 @@ export function WormholeEntry() {
   const handleKeyDown = (e) => {
     if (e.key !== 'Enter') return
     const val = inputValue.trim().toLowerCase()
-    if (val === 'start') {
-      startBoot()
+    if (val === 'sudo start') {
+      runSequence(BOOT_LINES, '/tv')
+    } else if (val === 'sudo loginadmin') {
+      runSequence(LOGIN_LINES, '/admin/login')
     } else {
       setInputError(true)
       setTimeout(() => setInputError(false), 600)
@@ -214,25 +269,19 @@ export function WormholeEntry() {
           {phase === 'idle' && (
             <div style={s.idleHeader}>
               <pre style={s.ascii}>{ASCII_LOGO}</pre>
-              <p style={s.hint}>
-                <span style={s.green}>teks@dashboard</span>
-                <span style={s.white}>:</span>
-                <span style={s.blue}>~</span>
-                <span style={s.white}>$ </span>
-                <span style={s.dim}>Digite </span>
-                <span style={s.green}>start</span>
-                <span style={s.dim}> e pressione </span>
-                <span style={s.white}>Enter</span>
-                <span style={s.dim}> ou clique em </span>
-                <button
-                  onClick={e => { e.stopPropagation(); startBoot() }}
-                  style={s.inlineBtn}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,200,0,0.2)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(0,255,0,0.3)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,200,0,0.08)'; e.currentTarget.style.boxShadow = '0 0 6px rgba(0,255,0,0.15)' }}
-                >
-                  ▶ iniciar
-                </button>
-              </p>
+              <div style={s.hintBlock}>
+                <p style={s.hint}>
+                  <span style={s.dim}>$ </span>
+                  <span style={s.green}>sudo start</span>
+                  <span style={s.dim}> — acessar o dashboard</span>
+                  <button
+                    onClick={e => { e.stopPropagation(); runSequence(BOOT_LINES, '/tv') }}
+                    style={s.inlineBtn}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,200,0,0.2)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(0,255,0,0.3)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,200,0,0.08)'; e.currentTarget.style.boxShadow = '0 0 6px rgba(0,255,0,0.15)' }}
+                  >▶ executar</button>
+                </p>
+              </div>
             </div>
           )}
 
@@ -252,7 +301,7 @@ export function WormholeEntry() {
           {phase === 'done' && (
             <div style={s.line}>
               <span style={{ ...s.green, fontWeight: 700 }}>
-                ▶ Redirecionando para o dashboard...
+                ▶ Redirecionando para {destination === '/tv' ? 'o dashboard' : 'o painel admin'}...
               </span>
               <span style={{ ...s.cursorBlock, opacity: cursor ? 1 : 0 }}>█</span>
             </div>
@@ -353,6 +402,7 @@ const s = {
     scrollbarColor: '#1a3a1a #000000',
   },
   idleHeader: { marginBottom: 12 },
+  hintBlock: { marginBottom: 14 },
   ascii: {
     margin: 0,
     fontSize: 13,
