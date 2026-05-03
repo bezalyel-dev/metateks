@@ -314,20 +314,24 @@ export function WormholeEntry() {
               <span style={s.white}>:</span>
               <span style={s.blue}>~</span>
               <span style={s.white}>$ </span>
-              <input
-                ref={inputRef}
-                value={inputValue}
-                onChange={handleInput}
-                onKeyDown={handleKeyDown}
-                style={{
-                  ...s.input,
-                  ...(inputError ? s.inputError : {}),
-                }}
-                spellCheck={false}
-                autoComplete="off"
-                autoCorrect="off"
-              />
-              <span style={{ ...s.cursorBlock, opacity: cursor ? 1 : 0 }}>█</span>
+              {/* wrapper flex:1 garante que o clique na linha inteira foca o input */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                <input
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={handleInput}
+                  onKeyDown={handleKeyDown}
+                  style={{
+                    ...s.input,
+                    width: `${Math.max(inputValue.length, 1)}ch`,
+                    ...(inputError ? s.inputError : {}),
+                  }}
+                  spellCheck={false}
+                  autoComplete="off"
+                  autoCorrect="off"
+                />
+                <span style={{ ...s.cursorBlock, opacity: cursor ? 1 : 0 }}>█</span>
+              </div>
             </div>
           )}
 
@@ -437,7 +441,6 @@ const s = {
     color: '#00ff00',
     fontSize: 13,
     fontFamily: 'inherit',
-    flex: 1,
     caretColor: 'transparent',
     padding: 0,
     minWidth: 0,
