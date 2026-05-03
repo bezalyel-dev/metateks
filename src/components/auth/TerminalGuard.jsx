@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom'
 export function TerminalGuard({ children }) {
   const authorized      = sessionStorage.getItem('teks_terminal_auth') === 'true'
   const alreadyLoggedIn = sessionStorage.getItem('teks_admin_session') === 'true'
+  const alreadyOnTv     = sessionStorage.getItem('teks_tv_session') === 'true'
 
   useEffect(() => {
     if (authorized) {
@@ -11,7 +12,7 @@ export function TerminalGuard({ children }) {
     }
   }, [])
 
-  if (!authorized && !alreadyLoggedIn) {
+  if (!authorized && !alreadyLoggedIn && !alreadyOnTv) {
     return <Navigate to="/access-denied" replace />
   }
 

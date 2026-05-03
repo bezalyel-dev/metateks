@@ -11,8 +11,15 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<WormholeEntry />} />
-      <Route path="/tv" element={<TvDashboardPage />} />
       <Route path="/access-denied" element={<AccessDeniedPage />} />
+      <Route
+        path="/tv"
+        element={
+          <TerminalGuard>
+            <TvDashboardPage />
+          </TerminalGuard>
+        }
+      />
       <Route
         path="/admin/login"
         element={

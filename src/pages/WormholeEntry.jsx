@@ -219,6 +219,9 @@ export function WormholeEntry() {
         setPhase('done')
         if (dest === '/admin/login') {
           sessionStorage.setItem('teks_terminal_auth', 'true')
+        } else if (dest === '/tv') {
+          sessionStorage.setItem('teks_terminal_auth', 'true')
+          sessionStorage.setItem('teks_tv_session', 'true')
         }
         setTimeout(() => navigate(dest), BOOT_DURATION)
       }
