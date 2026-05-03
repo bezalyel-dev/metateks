@@ -24,9 +24,11 @@ export function AppRouter() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute>
-            <AdminPanelPage />
-          </ProtectedRoute>
+          <TerminalGuard>
+            <ProtectedRoute>
+              <AdminPanelPage />
+            </ProtectedRoute>
+          </TerminalGuard>
         }
       />
     </Routes>

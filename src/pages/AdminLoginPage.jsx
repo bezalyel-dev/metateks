@@ -39,6 +39,10 @@ export function AdminLoginPage() {
       return
     }
 
+    // Renova a flag para o TerminalGuard liberar /admin
+    // e marca sessão ativa para permitir reload sem cair em /access-denied
+    sessionStorage.setItem('teks_terminal_auth', 'true')
+    sessionStorage.setItem('teks_admin_session', 'true')
     navigate('/admin')
   }
 
