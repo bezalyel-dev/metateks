@@ -45,7 +45,6 @@ export function LiveClock() {
     const spawnBolt = () => {
       const w = canvas.width
       const h = canvas.height
-      // Raios nascem das bordas laterais ou superior/inferior
       const fromSide = Math.random() < 0.5
       let startX, startY, endX, endY
 
@@ -61,7 +60,6 @@ export function LiveClock() {
         endY   = startY === 0 ? h * (0.2 + Math.random() * 0.6) : h * (0.2 + Math.random() * 0.6)
       }
 
-      // Paleta branco-azulada
       const palette = ['#bfdbfe', '#93c5fd', '#e0f2fe', '#ffffff', '#7dd3fc']
       boltsRef.current.push({
         segs:    generateBolt(startX, startY, endX, endY, 4),
@@ -86,7 +84,6 @@ export function LiveClock() {
         ctx.save()
         ctx.globalAlpha = alpha
 
-        // Glow azulado externo
         ctx.strokeStyle = bolt.color
         ctx.lineWidth   = 2.5
         ctx.shadowBlur  = 16
@@ -98,7 +95,6 @@ export function LiveClock() {
         })
         ctx.stroke()
 
-        // Núcleo branco brilhante
         ctx.strokeStyle = 'rgba(255,255,255,0.95)'
         ctx.lineWidth   = 0.8
         ctx.shadowBlur  = 5
@@ -132,8 +128,43 @@ export function LiveClock() {
   })
   const dataFormatada = data.charAt(0).toUpperCase() + data.slice(1)
 
+  // Contador regressivo para o fim do ano
+  const year      = now.getFullYear()
+  const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999)
+  const diffMs    = Math.max(0, endOfYear - now)
+  const totalSecs = Math.floor(diffMs / 1000)
+  const cdSecs    = totalSecs % 60
+  const cdMins    = Math.floor(totalSecs / 60) % 60
+  const cdHours   = Math.floor(totalSecs / 3600) % 24
+  const cdDays    = Math.floor(totalSecs / 86400)
+
+  const pad = (n) => String(n).padStart(2, '0')
+
+  const unitStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 2,
+  }
+
+  const valueStyle = {
+    fontSize: 'clamp(24px, 3.5vw, 48px)',
+    fontWeight: 700,
+    fontVariantNumeric: 'tabular-nums',
+    color: '#4ade80',
+    textShadow: '0 0 12px rgba(74,222,128,0.45)',
+    lineHeight: 1,
+  }
+
+  const labelStyle = {
+    fontSize: 'clamp(12px, 1.4vw, 16px)',
+    color: 'rgba(255,255,255,0.35)',
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+  }
+
   return (
-    <div ref={wrapperRef} className="relative flex flex-col items-center gap-0.5" style={{ minWidth: 220 }}>
+    <div ref={wrapperRef} className="relative flex flex-col items-center gap-1" style={{ minWidth: 240 }}>
       {/* Canvas dos raios sobreposto */}
       <canvas
         ref={canvasRef}
@@ -158,13 +189,70 @@ export function LiveClock() {
       <span
         className="relative text-center font-medium"
         style={{
-          fontSize: 'clamp(11px, 1.3vw, 16px)',
+          fontSize: 'clamp(16px, 2vw, 24px)',
           color: 'rgba(255,255,255,0.45)',
           letterSpacing: '0.06em',
         }}
       >
         {dataFormatada}
       </span>
+
+      {/* Separador */}
+      <div
+        className="relative"
+        style={{
+          width: 40,
+          height: 1,
+          background: 'rgba(255,255,255,0.1)',
+          marginTop: 4,
+          marginBottom: 4,
+        }}
+      />
+
+      {/* Label do contador */}
+      <span
+        className="relative"
+        style={{
+          fontSize: 'clamp(9px, 1vw, 11px)',
+          color: 'rgba(255,255,255,0.3)',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          marginBottom: 4,
+        }}
+      >
+        Faltam para {year} acabar
+      </span>
+
+      {/* Contador regressivo */}
+      <div
+        className="relative flex gap-3"
+      >
+        <div style={unitStyle}>
+          <span style={valueStyle}>{cdDays}</span>
+          <span style={labelStyle}>dias</span>
+        </div>
+
+        <span style={{ ...valueStyle, alignSelf: 'flex-start', opacity: 0.4 }}>:</span>
+
+        <div style={unitStyle}>
+          <span style={valueStyle}>{pad(cdHours)}</span>
+          <span style={labelStyle}>horas</span>
+        </div>
+
+        <span style={{ ...valueStyle, alignSelf: 'flex-start', opacity: 0.4 }}>:</span>
+
+        <div style={unitStyle}>
+          <span style={valueStyle}>{pad(cdMins)}</span>
+          <span style={labelStyle}>min</span>
+        </div>
+
+        <span style={{ ...valueStyle, alignSelf: 'flex-start', opacity: 0.4 }}>:</span>
+
+        <div style={unitStyle}>
+          <span style={valueStyle}>{pad(cdSecs)}</span>
+          <span style={labelStyle}>seg</span>
+        </div>
+      </div>
     </div>
   )
 }
