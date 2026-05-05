@@ -38,6 +38,7 @@ const ELECTRIC_CSS = `
       #4ade80, #22c55e, #4ade80
     );
     animation: ea-rot 2.5s linear infinite;
+    will-change: --ea;
     z-index: -2;
   }
   .ec-wrap::after {
@@ -59,7 +60,8 @@ const ELECTRIC_CSS = `
       #4ade8055
     );
     animation: ea-rot 2.5s linear infinite, ea-pulse 1.8s ease-in-out infinite;
-    filter: blur(7px);
+    filter: blur(4px);
+    will-change: --ea, opacity;
     z-index: -3;
     opacity: .55;
     pointer-events: none;
@@ -75,6 +77,7 @@ const ELECTRIC_CSS = `
       transparent 75%, #22c55e 77%, transparent 80%
     );
     animation: ea-rot-rev 1.5s linear infinite;
+    will-change: --ea;
     z-index: -2;
     opacity: .8;
     pointer-events: none;

@@ -8,9 +8,16 @@ export function AnimatedBackground() {
     if (!canvas) return
     const ctx = canvas.getContext('2d')
 
+    // Cache grid spacing — só recalcula no resize
+    let gridSpacing = { x: 0, y: 0 }
+
     const resize = () => {
       canvas.width  = window.innerWidth
       canvas.height = window.innerHeight
+      gridSpacing = {
+        x: Math.round(canvas.width  / 18),
+        y: Math.round(canvas.height / 12),
+      }
     }
     resize()
     window.addEventListener('resize', resize)
@@ -49,16 +56,10 @@ export function AnimatedBackground() {
       }
     }
 
-    let particles = Array.from({ length: 90 }, () =>
+    const PARTICLE_COUNT = 55
+    let particles = Array.from({ length: PARTICLE_COUNT }, () =>
       makeParticle(canvas.width, canvas.height)
     )
-
-    /* ── Grid ─────────────────────────────────────────────── */
-    // Espaçamento relativo à tela para ser responsivo
-    const getGridSpacing = () => ({
-      x: Math.round(canvas.width  / 18),  // ~18 colunas
-      y: Math.round(canvas.height / 12),  // ~12 linhas
-    })
 
     /* ── Loop ─────────────────────────────────────────────── */
     let raf, t = 0
@@ -94,39 +95,29 @@ export function AnimatedBackground() {
         ctx.fillRect(0, 0, W, H)
       }
 
-      /* grid estilizado com dois níveis de opacidade */
-      const { x: sx, y: sy } = getGridSpacing()
+      /* grid — só linhas primárias, strokeStyle unificado por frame */
+      const { x: sx, y: sy } = gridSpacing
+      const shimmer = 0.07 + 0.04 * Math.sin(t * 0.004)
 
-      // linhas secundárias (mais finas, mais transparentes)
-      ctx.lineWidth = 0.5
-      ctx.strokeStyle = 'rgba(34,197,94,0.04)'
-      for (let x = 0; x < W; x += sx / 2) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke()
-      }
-      for (let y = 0; y < H; y += sy / 2) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
-      }
-
-      // linhas primárias (mais visíveis)
       ctx.lineWidth = 0.8
+      ctx.strokeStyle = `rgba(74,222,128,${shimmer})`
+      ctx.beginPath()
       for (let x = 0; x < W; x += sx) {
-        // gradiente vertical por coluna para shimmer
-        const shimmer = 0.07 + 0.04 * Math.sin(t * 0.004 + x * 0.01)
-        ctx.strokeStyle = `rgba(74,222,128,${shimmer})`
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke()
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x, H)
       }
       for (let y = 0; y < H; y += sy) {
-        const shimmer = 0.07 + 0.04 * Math.sin(t * 0.004 + y * 0.01)
-        ctx.strokeStyle = `rgba(74,222,128,${shimmer})`
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
+        ctx.moveTo(0, y)
+        ctx.lineTo(W, y)
       }
+      ctx.stroke()
 
-      // pontos de interseção brilhantes
+      /* pontos de interseção — opacidade única por frame */
+      const dotGlow = 0.12 + 0.10 * Math.sin(t * 0.005)
+      ctx.globalAlpha = dotGlow
       ctx.fillStyle = 'rgba(134,239,172,0.18)'
       for (let x = 0; x < W; x += sx) {
         for (let y = 0; y < H; y += sy) {
-          const glow = 0.12 + 0.10 * Math.sin(t * 0.005 + x * 0.015 + y * 0.01)
-          ctx.globalAlpha = glow
           ctx.beginPath()
           ctx.arc(x, y, 1.2, 0, Math.PI * 2)
           ctx.fill()
@@ -171,8 +162,8 @@ export function AnimatedBackground() {
         ctx.fillStyle = `${p.hue}${pulse})`
         ctx.fill()
 
-        // halo para partículas médias/grandes
-        if (p.r > 2) {
+        // halo apenas pra partículas grandes (r > 3.5) — reduz ~40% dos halos
+        if (p.r > 3.5) {
           ctx.beginPath()
           ctx.arc(p.x, p.y, p.r * 2.2, 0, Math.PI * 2)
           ctx.fillStyle = `${p.hue}${pulse * 0.12})`
@@ -180,9 +171,8 @@ export function AnimatedBackground() {
         }
       }
 
-      // repor partículas se canvas redimensionou
-      if (particles.length < 90) {
-        particles = Array.from({ length: 90 }, () => makeParticle(W, H))
+      if (particles.length < PARTICLE_COUNT) {
+        particles = Array.from({ length: PARTICLE_COUNT }, () => makeParticle(W, H))
       }
 
       raf = requestAnimationFrame(draw)

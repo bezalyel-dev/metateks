@@ -1,4 +1,7 @@
+import { useId } from 'react'
+
 export function GoalCard({ title, novos, meta, progress, gradient, glowColor }) {
+  const gradId = useId().replace(/:/g, '')
   const circumference = 2 * Math.PI * 54
   const strokeDashoffset = circumference - (progress / 100) * circumference
 
@@ -28,7 +31,7 @@ export function GoalCard({ title, novos, meta, progress, gradient, glowColor }) 
             <circle
               cx="60" cy="60" r="54"
               fill="none"
-              stroke="url(#donutGrad)"
+              stroke={`url(#${gradId})`}
               strokeWidth="10"
               strokeLinecap="round"
               strokeDasharray={circumference}
@@ -37,7 +40,7 @@ export function GoalCard({ title, novos, meta, progress, gradient, glowColor }) 
               style={{ transition: 'stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)' }}
             />
             <defs>
-              <linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%"   stopColor={gradient[0]} />
                 <stop offset="100%" stopColor={gradient[1]} />
               </linearGradient>
