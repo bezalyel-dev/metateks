@@ -3,7 +3,8 @@ import { DEFAULT_DASHBOARD_CONFIG, fetchDashboardConfig } from '../lib/dashboard
 import { supabase, supabaseEnvError } from '../lib/supabaseClient'
 import { useCelebration } from '../hooks/useCelebration'
 import { useSomCliente } from '../hooks/Usesomcliente'
-import { TvDashboardView } from './components/Dashboardview/TvDashBoardView'
+import { TvDashboardView } from './views/TvDashBoardView'
+import { fetchHistoricoAno } from '../lib/historicoConfig'
 
 function toSafeInt(value, fallback = 0) {
   const parsed = Number.parseInt(value, 10)
@@ -11,8 +12,9 @@ function toSafeInt(value, fallback = 0) {
 }
 
 export function TvDashboardPage() {
-  const [config, setConfig] = useState(DEFAULT_DASHBOARD_CONFIG)
+  const [config, setConfig]     = useState(DEFAULT_DASHBOARD_CONFIG)
   const [loadError, setLoadError] = useState('')
+  const [historico, setHistorico] = useState([])
   const prevTotalRef = useRef(null)
   const { triggerCelebration, CelebrationCanvas } = useCelebration()
 
@@ -25,7 +27,7 @@ export function TvDashboardPage() {
   const [redFlash, setRedFlash] = useState(false)
   const redFlashTimerRef = useRef(null)
 
-  // ── Busca e sincroniza config em tempo real ──────────────────────────────────
+  // ── Busca e sincroniza config em tempo real ────────────────────────────────
 
   useEffect(() => {
     if (!supabase) {
@@ -52,11 +54,21 @@ export function TvDashboardPage() {
       }
     }
 
+    const loadHistorico = async () => {
+      try {
+        const ano = new Date().getFullYear()
+        const rows = await fetchHistoricoAno(supabase, ano)
+        if (isActive) setHistorico(rows)
+      } catch (_) {}
+    }
+
     refreshConfig()
+    loadHistorico()
 
     const realtimeChannel = supabase
       .channel('dashboard-config-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'configuracoes_dashboard' }, refreshConfig)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'historico_clientes_mensal' }, loadHistorico)
       .subscribe()
 
     return () => {
@@ -65,7 +77,7 @@ export function TvDashboardPage() {
     }
   }, [])
 
-  // ── Derivações ───────────────────────────────────────────────────────────────
+  // ── Derivações ─────────────────────────────────────────────────────────────
 
   const totalClientes   = Math.max(0, toSafeInt(config.contagem_atual, 0))
   const clientesMes     = Math.max(0, toSafeInt(config.clientes_mes,   0))
@@ -76,7 +88,7 @@ export function TvDashboardPage() {
   const progressoMensal = metaMensal > 0 ? Math.min(100, Math.round((clientesMes / metaMensal) * 100)) : 0
   const progressoAnual  = metaAnual  > 0 ? Math.min(100, Math.round((clientesAno / metaAnual)  * 100)) : 0
 
-  // ── Detecta adição ou remoção de cliente ─────────────────────────────────────
+  // ── Detecta adição ou remoção de cliente ───────────────────────────────────
 
   useEffect(() => {
     if (prevTotalRef.current === null) {
@@ -114,6 +126,7 @@ export function TvDashboardPage() {
       mesAtual={mesAtual}
       anoAtual={anoAtual}
       CelebrationCanvas={CelebrationCanvas}
+      historico={historico}
     />
   )
 }
